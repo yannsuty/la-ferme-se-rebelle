@@ -1,20 +1,37 @@
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getFarmAccess } from "@/lib/farm-auth";
+import { auth } from "@/lib/auth";
 import type { PastureInput } from "@/lib/validations";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPasturesPage() {
+type PageProps = {
+  params: Promise<{ farmSlug: string }>;
+};
+
+export default async function AdminPasturesPage({ params }: PageProps) {
+  const { farmSlug } = await params;
+  const session = await auth();
+  if (!session?.user) notFound();
+
+  const access = await getFarmAccess(farmSlug, session.user.id);
+  if (!access || access.membership.role !== "OWNER") notFound();
+
   const pastures = await prisma.pasture.findMany({
-    where: { active: true },
+    where: { farmId: access.farm.id, active: true },
     orderBy: { name: "asc" },
   });
 
   return (
     <div className="space-y-4">
       <header>
+        <p className="text-sm uppercase tracking-wide text-emerald-700/80">
+          {access.farm.name}
+        </p>
         <h1 className="text-3xl font-bold">Parcelles</h1>
         <p className="text-emerald-800/80">
-          Liste des pâtures et champs enregistrés (édition avancée à venir).
+          Liste des pâtures et champs de cette ferme (édition avancée à venir).
         </p>
       </header>
       <ul className="space-y-2" data-testid="pastures-list">

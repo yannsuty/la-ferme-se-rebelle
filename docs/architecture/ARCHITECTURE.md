@@ -24,23 +24,38 @@ Application PWA de gestion d'une ferme laitière. Première version centrée sur
 
 ```
 src/
-├── app/                    # Pages et routes API (App Router)
-│   ├── admin/              # Administration (patron)
-│   ├── api/                # REST : users, pastures, grazing
-│   ├── carte/              # Carte pâtures + sorties traite
-│   └── connexion/          # Page de login
-├── components/             # UI réutilisable
-├── lib/                    # Auth, Prisma, validations, geo
-└── generated/prisma/       # Client Prisma généré
+├── app/
+│   ├── f/[farmSlug]/       # Pages scopées par ferme (slug URL)
+│   │   ├── tableau-de-bord/
+│   │   ├── carte/
+│   │   └── admin/
+│   ├── fermes/             # Sélecteur si multi-fermes
+│   ├── api/f/[farmSlug]/   # API REST par ferme
+│   └── connexion/
+├── components/
+├── lib/
+│   ├── farm-auth.ts        # Vérification d'accès ferme
+│   └── farm-path.ts        # Helpers de chemins /f/{slug}
 prisma/
-├── schema.prisma           # Modèle de données
-├── migrations/             # Migrations SQL
-└── seed.ts                 # Données de démo
-docs/                       # Documentation projet
-e2e/                        # Tests Playwright
+docs/
+e2e/
 ```
 
 ## Flux principaux
+
+### Routage multi-fermes
+
+```mermaid
+flowchart TD
+  L[Connexion] --> F{Plusieurs fermes ?}
+  F -->|Oui| S[/fermes — sélecteur]
+  F -->|Non| D["/f/{slug}/tableau-de-bord"]
+  S --> D
+  D --> C["/f/{slug}/carte"]
+  D --> A["/f/{slug}/admin/*"]
+```
+
+Un utilisateur peut appartenir à plusieurs fermes avec un rôle distinct par ferme (`farm_memberships`).
 
 ### Authentification
 
@@ -89,12 +104,13 @@ flowchart TD
 
 - Mots de passe hashés (bcrypt, 12 rounds)
 - Middleware protège toutes les routes sauf `/connexion`
-- Routes `/admin/*` réservées au rôle `OWNER`
+- Routes `/f/{slug}/admin/*` réservées au rôle `OWNER` **dans la ferme**
+- API `/api/f/{slug}/*` : vérification d'adhésion en base (`farm_memberships`)
 - Validation Zod sur toutes les entrées API
 
 ## Évolutions prévues
 
 - Éditeur de polygones sur carte (création parcelles)
-- Multi-fermes / multi-espèces
+- Création de fermes et invitation d'utilisateurs existants
 - Mode hors-ligne avancé (sync IndexedDB)
 - Notifications push pour rappels de traite

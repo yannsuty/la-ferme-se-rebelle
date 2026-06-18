@@ -1,22 +1,26 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/api-auth";
+import { requireFarmAuth } from "@/lib/farm-auth";
 import { prisma } from "@/lib/prisma";
 import { pastureSchema } from "@/lib/validations";
 
-export async function GET() {
-  const authResult = await requireAuth();
+type RouteParams = { params: Promise<{ farmSlug: string }> };
+
+export async function GET(_request: Request, { params }: RouteParams) {
+  const { farmSlug } = await params;
+  const authResult = await requireFarmAuth(farmSlug);
   if (authResult.error) return authResult.error;
 
   const pastures = await prisma.pasture.findMany({
-    where: { active: true },
+    where: { farmId: authResult.access.farm.id, active: true },
     orderBy: { name: "asc" },
   });
 
   return NextResponse.json(pastures);
 }
 
-export async function POST(request: Request) {
-  const authResult = await requireAuth(["OWNER"]);
+export async function POST(request: Request, { params }: RouteParams) {
+  const { farmSlug } = await params;
+  const authResult = await requireFarmAuth(farmSlug, ["OWNER"]);
   if (authResult.error) return authResult.error;
 
   const body = await request.json();
@@ -31,6 +35,7 @@ export async function POST(request: Request) {
 
   const pasture = await prisma.pasture.create({
     data: {
+      farmId: authResult.access.farm.id,
       name: parsed.data.name,
       type: parsed.data.type,
       description: parsed.data.description,

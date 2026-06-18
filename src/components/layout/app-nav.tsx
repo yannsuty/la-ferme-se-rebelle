@@ -3,20 +3,34 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-
-const links = [
-  { href: "/tableau-de-bord", label: "Tableau de bord" },
-  { href: "/carte", label: "Carte des pâtures" },
-  { href: "/admin/utilisateurs", label: "Utilisateurs", ownerOnly: true },
-  { href: "/admin/patures", label: "Gérer les parcelles", ownerOnly: true },
-];
+import { farmPath, parseFarmSlug } from "@/lib/farm-path";
+import { roleLabel } from "@/lib/roles";
 
 export function AppNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const isOwner = session?.user?.role === "OWNER";
+  const farmSlug = parseFarmSlug(pathname);
+  const currentFarm = session?.farms.find((farm) => farm.slug === farmSlug);
+  const isOwner = currentFarm?.role === "OWNER";
 
   if (!session) return null;
+
+  const links = farmSlug
+    ? [
+        { href: farmPath(farmSlug), label: "Tableau de bord" },
+        { href: farmPath(farmSlug, "/carte"), label: "Carte des pâtures" },
+        {
+          href: farmPath(farmSlug, "/admin/utilisateurs"),
+          label: "Utilisateurs",
+          ownerOnly: true,
+        },
+        {
+          href: farmPath(farmSlug, "/admin/patures"),
+          label: "Gérer les parcelles",
+          ownerOnly: true,
+        },
+      ]
+    : [];
 
   return (
     <header className="border-b border-emerald-900/20 bg-emerald-950 text-emerald-50">
@@ -25,33 +39,48 @@ export function AppNav() {
           <p className="text-xs uppercase tracking-widest text-emerald-300/80">
             La Ferme se Rebelle
           </p>
-          <p className="font-semibold">Gestion laitière</p>
+          <p className="font-semibold">
+            {currentFarm?.name ?? "Gestion laitière"}
+          </p>
         </div>
-        <nav className="flex flex-wrap gap-2">
-          {links
-            .filter((link) => !link.ownerOnly || isOwner)
-            .map((link) => {
-              const active = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`rounded-full px-3 py-1.5 text-sm transition ${
-                    active
-                      ? "bg-emerald-500 text-white"
-                      : "text-emerald-100 hover:bg-emerald-900"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-        </nav>
-        <div className="flex items-center gap-3 text-sm">
+        {links.length > 0 && (
+          <nav className="flex flex-wrap gap-2">
+            {links
+              .filter((link) => !link.ownerOnly || isOwner)
+              .map((link) => {
+                const active = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`rounded-full px-3 py-1.5 text-sm transition ${
+                      active
+                        ? "bg-emerald-500 text-white"
+                        : "text-emerald-100 hover:bg-emerald-900"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+          </nav>
+        )}
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          {session.farms.length > 1 && (
+            <Link
+              href="/fermes"
+              className="rounded border border-emerald-700 px-2 py-1 hover:bg-emerald-900"
+              data-testid="farm-switcher"
+            >
+              Changer de ferme
+            </Link>
+          )}
           <span data-testid="user-name">{session.user.name}</span>
-          <span className="rounded bg-emerald-800 px-2 py-0.5 text-xs uppercase">
-            {session.user.role === "OWNER" ? "Patron" : "Employé"}
-          </span>
+          {currentFarm && (
+            <span className="rounded bg-emerald-800 px-2 py-0.5 text-xs uppercase">
+              {roleLabel(currentFarm.role)}
+            </span>
+          )}
           <button
             type="button"
             onClick={() => signOut({ callbackUrl: "/connexion" })}

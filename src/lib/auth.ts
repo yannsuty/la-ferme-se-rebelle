@@ -6,9 +6,16 @@ import { verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
 
+export type FarmMembershipSummary = {
+  id: string;
+  slug: string;
+  name: string;
+  role: Role;
+};
+
 declare module "next-auth" {
   interface User {
-    role: Role;
+    farms: FarmMembershipSummary[];
   }
 
   interface Session {
@@ -16,15 +23,15 @@ declare module "next-auth" {
       id: string;
       email: string;
       name: string;
-      role: Role;
     };
+    farms: FarmMembershipSummary[];
   }
 }
 
 declare module "@auth/core/jwt" {
   interface JWT {
     id: string;
-    role: Role;
+    farms: FarmMembershipSummary[];
   }
 }
 
@@ -43,9 +50,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: { email: parsed.data.email.toLowerCase() },
+          include: {
+            memberships: {
+              where: {
+                active: true,
+                farm: { active: true },
+              },
+              include: {
+                farm: {
+                  select: { id: true, slug: true, name: true },
+                },
+              },
+            },
+          },
         });
 
-        if (!user || !user.active) return null;
+        if (!user || !user.active || user.memberships.length === 0) return null;
 
         const valid = await verifyPassword(
           parsed.data.password,
@@ -57,7 +77,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role,
+          farms: user.memberships.map((membership) => ({
+            id: membership.farm.id,
+            slug: membership.farm.slug,
+            name: membership.farm.name,
+            role: membership.role,
+          })),
         };
       },
     }),

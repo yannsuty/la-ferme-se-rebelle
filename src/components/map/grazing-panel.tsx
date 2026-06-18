@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { PastureMap, type GrazingData, type PastureData } from "./pasture-map";
 import { formatSessionLabel, todayIsoDate } from "@/lib/geo";
+import { farmApiPath } from "@/lib/farm-path";
 
 type Props = {
+  farmSlug: string;
   pastures: PastureData[];
   initialAssignments: GrazingData[];
 };
 
-export function GrazingPanel({ pastures, initialAssignments }: Props) {
+export function GrazingPanel({ farmSlug, pastures, initialAssignments }: Props) {
   const [date, setDate] = useState(todayIsoDate());
   const [session, setSession] = useState<"MORNING" | "EVENING">("MORNING");
   const [selectedPastureId, setSelectedPastureId] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export function GrazingPanel({ pastures, initialAssignments }: Props) {
     setLoading(true);
     setMessage(null);
 
-    const response = await fetch("/api/grazing", {
+    const response = await fetch(farmApiPath(farmSlug, "/grazing"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -30,7 +30,7 @@ export function LoginForm() {
       return;
     }
 
-    const callbackUrl = searchParams.get("callbackUrl") ?? "/tableau-de-bord";
+    const callbackUrl = searchParams.get("callbackUrl") ?? "/fermes";
     router.push(callbackUrl);
     router.refresh();
   }

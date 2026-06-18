@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import { farmPath, parseFarmSlug } from "@/lib/farm-path";
 
 export const authConfig = {
   providers: [],
@@ -12,6 +13,7 @@ export const authConfig = {
       const pathname = nextUrl.pathname;
       const isAuthRoute = pathname.startsWith("/api/auth");
       const isPublicPage = pathname === "/connexion";
+      const farmSlug = parseFarmSlug(pathname);
 
       if (pathname.startsWith("/api/") && !isAuthRoute) {
         return true;
@@ -22,11 +24,22 @@ export const authConfig = {
       }
 
       if (isLoggedIn && pathname === "/connexion") {
-        return Response.redirect(new URL("/tableau-de-bord", nextUrl));
+        return Response.redirect(new URL("/fermes", nextUrl));
       }
 
-      if (pathname.startsWith("/admin") && auth?.user?.role !== "OWNER") {
-        return Response.redirect(new URL("/tableau-de-bord", nextUrl));
+      if (farmSlug) {
+        const farms = auth?.farms ?? [];
+        const membership = farms.find((farm) => farm.slug === farmSlug);
+
+        if (!membership) {
+          return Response.redirect(new URL("/fermes", nextUrl));
+        }
+
+        if (pathname.includes("/admin") && membership.role !== "OWNER") {
+          return Response.redirect(
+            new URL(farmPath(farmSlug, "/tableau-de-bord"), nextUrl),
+          );
+        }
       }
 
       return true;
@@ -34,15 +47,15 @@ export const authConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id!;
-        token.role = user.role;
+        token.farms = user.farms;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as "OWNER" | "EMPLOYEE";
       }
+      session.farms = (token.farms as typeof session.farms) ?? [];
       return session;
     },
   },

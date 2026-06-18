@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/api-auth";
+import { requireFarmAuth } from "@/lib/farm-auth";
 import { prisma } from "@/lib/prisma";
 import { pastureSchema } from "@/lib/validations";
 
-type RouteParams = { params: Promise<{ id: string }> };
+type RouteParams = { params: Promise<{ farmSlug: string; id: string }> };
 
 export async function PATCH(request: Request, { params }: RouteParams) {
-  const authResult = await requireAuth(["OWNER"]);
+  const { farmSlug, id } = await params;
+  const authResult = await requireFarmAuth(farmSlug, ["OWNER"]);
   if (authResult.error) return authResult.error;
 
-  const { id } = await params;
   const body = await request.json();
   const parsed = pastureSchema.partial().safeParse(body);
 
@@ -18,6 +18,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       { error: "Données invalides", details: parsed.error.flatten() },
       { status: 400 },
     );
+  }
+
+  const existing = await prisma.pasture.findFirst({
+    where: { id, farmId: authResult.access.farm.id },
+  });
+
+  if (!existing) {
+    return NextResponse.json({ error: "Parcelle introuvable" }, { status: 404 });
   }
 
   const pasture = await prisma.pasture.update({
@@ -29,10 +37,17 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 }
 
 export async function DELETE(_request: Request, { params }: RouteParams) {
-  const authResult = await requireAuth(["OWNER"]);
+  const { farmSlug, id } = await params;
+  const authResult = await requireFarmAuth(farmSlug, ["OWNER"]);
   if (authResult.error) return authResult.error;
 
-  const { id } = await params;
+  const existing = await prisma.pasture.findFirst({
+    where: { id, farmId: authResult.access.farm.id },
+  });
+
+  if (!existing) {
+    return NextResponse.json({ error: "Parcelle introuvable" }, { status: 404 });
+  }
 
   await prisma.pasture.update({
     where: { id },

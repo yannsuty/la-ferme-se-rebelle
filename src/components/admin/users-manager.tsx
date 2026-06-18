@@ -1,9 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { farmApiPath } from "@/lib/farm-path";
 
 type UserRow = {
   id: string;
+  membershipId: string;
   email: string;
   name: string;
   role: "OWNER" | "EMPLOYEE";
@@ -11,10 +13,11 @@ type UserRow = {
 };
 
 type Props = {
+  farmSlug: string;
   initialUsers: UserRow[];
 };
 
-export function UsersManager({ initialUsers }: Props) {
+export function UsersManager({ farmSlug, initialUsers }: Props) {
   const [users, setUsers] = useState<UserRow[]>(initialUsers);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -25,7 +28,7 @@ export function UsersManager({ initialUsers }: Props) {
   });
 
   async function loadUsers() {
-    const response = await fetch("/api/users");
+    const response = await fetch(farmApiPath(farmSlug, "/users"));
     if (!response.ok) {
       setError("Impossible de charger les utilisateurs");
       return;
@@ -37,7 +40,7 @@ export function UsersManager({ initialUsers }: Props) {
     event.preventDefault();
     setError(null);
 
-    const response = await fetch("/api/users", {
+    const response = await fetch(farmApiPath(farmSlug, "/users"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -54,7 +57,7 @@ export function UsersManager({ initialUsers }: Props) {
   }
 
   async function toggleActive(user: UserRow) {
-    await fetch(`/api/users/${user.id}`, {
+    await fetch(farmApiPath(farmSlug, `/users/${user.id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active: !user.active }),
@@ -69,7 +72,7 @@ export function UsersManager({ initialUsers }: Props) {
         className="grid gap-3 rounded-xl border border-emerald-200 bg-white p-4 md:grid-cols-2"
         data-testid="create-user-form"
       >
-        <h2 className="md:col-span-2 text-lg font-semibold">Nouveau compte</h2>
+        <h2 className="md:col-span-2 text-lg font-semibold">Nouveau membre</h2>
         {error && <p className="md:col-span-2 text-sm text-red-600">{error}</p>}
         <input
           placeholder="Nom"
@@ -114,7 +117,7 @@ export function UsersManager({ initialUsers }: Props) {
           className="md:col-span-2 rounded-lg bg-emerald-600 px-4 py-2 text-white"
           data-testid="create-user-submit"
         >
-          Créer le compte
+          Ajouter à la ferme
         </button>
       </form>
 
@@ -133,12 +136,12 @@ export function UsersManager({ initialUsers }: Props) {
             {users.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-4">
-                  Aucun utilisateur
+                  Aucun membre
                 </td>
               </tr>
             ) : (
               users.map((user) => (
-                <tr key={user.id} className="border-t border-emerald-100">
+                <tr key={user.membershipId} className="border-t border-emerald-100">
                   <td className="px-4 py-2">{user.name}</td>
                   <td className="px-4 py-2">{user.email}</td>
                   <td className="px-4 py-2">
@@ -153,7 +156,7 @@ export function UsersManager({ initialUsers }: Props) {
                       onClick={() => toggleActive(user)}
                       className="text-emerald-700 underline"
                     >
-                      {user.active ? "Désactiver" : "Réactiver"}
+                      {user.active ? "Retirer" : "Réactiver"}
                     </button>
                   </td>
                 </tr>

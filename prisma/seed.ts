@@ -59,44 +59,115 @@ const demoPastures = [
   },
 ];
 
+const collinePastures = [
+  {
+    name: "Plateau",
+    type: "PASTURE" as const,
+    description: "Pâture en hauteur",
+    color: "#84cc16",
+    geometry: {
+      type: "Polygon" as const,
+      coordinates: [
+        [
+          [2.0100, 47.0100],
+          [2.0110, 47.0100],
+          [2.0110, 47.0108],
+          [2.0100, 47.0108],
+          [2.0100, 47.0100],
+        ],
+      ],
+    },
+  },
+];
+
 async function main() {
   const ownerPassword = await hashPassword("patron1234");
   const employeePassword = await hashPassword("employe1234");
 
-  await prisma.user.upsert({
+  const rebelle = await prisma.farm.upsert({
+    where: { slug: "ferme-rebelle" },
+    update: {},
+    create: {
+      name: "La Ferme se Rebelle",
+      slug: "ferme-rebelle",
+    },
+  });
+
+  const colline = await prisma.farm.upsert({
+    where: { slug: "ferme-des-collines" },
+    update: {},
+    create: {
+      name: "Ferme des Collines",
+      slug: "ferme-des-collines",
+    },
+  });
+
+  const patron = await prisma.user.upsert({
     where: { email: "patron@ferme.local" },
     update: {},
     create: {
       email: "patron@ferme.local",
       name: "Jean Patron",
-      role: "OWNER",
       passwordHash: ownerPassword,
     },
   });
 
-  await prisma.user.upsert({
+  const employee = await prisma.user.upsert({
     where: { email: "employe@ferme.local" },
     update: {},
     create: {
       email: "employe@ferme.local",
       name: "Marie Employée",
-      role: "EMPLOYEE",
       passwordHash: employeePassword,
     },
   });
 
+  const memberships = [
+    { userId: patron.id, farmId: rebelle.id, role: "OWNER" as const },
+    { userId: patron.id, farmId: colline.id, role: "OWNER" as const },
+    { userId: employee.id, farmId: rebelle.id, role: "EMPLOYEE" as const },
+    { userId: employee.id, farmId: colline.id, role: "EMPLOYEE" as const },
+  ];
+
+  for (const membership of memberships) {
+    await prisma.farmMembership.upsert({
+      where: {
+        userId_farmId: {
+          userId: membership.userId,
+          farmId: membership.farmId,
+        },
+      },
+      update: {},
+      create: membership,
+    });
+  }
+
   for (const pasture of demoPastures) {
     const existing = await prisma.pasture.findFirst({
-      where: { name: pasture.name },
+      where: { farmId: rebelle.id, name: pasture.name },
     });
     if (!existing) {
-      await prisma.pasture.create({ data: pasture });
+      await prisma.pasture.create({
+        data: { ...pasture, farmId: rebelle.id },
+      });
+    }
+  }
+
+  for (const pasture of collinePastures) {
+    const existing = await prisma.pasture.findFirst({
+      where: { farmId: colline.id, name: pasture.name },
+    });
+    if (!existing) {
+      await prisma.pasture.create({
+        data: { ...pasture, farmId: colline.id },
+      });
     }
   }
 
   console.log("Seed terminé :");
-  console.log("  Patron  → patron@ferme.local / patron1234");
-  console.log("  Employé → employe@ferme.local / employe1234");
+  console.log("  Fermes  → ferme-rebelle, ferme-des-collines");
+  console.log("  Patron  → patron@ferme.local / patron1234 (2 fermes)");
+  console.log("  Employé → employe@ferme.local / employe1234 (2 fermes)");
 }
 
 main()
