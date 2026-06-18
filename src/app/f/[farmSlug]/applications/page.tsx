@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   AppGridIcon,
   DashboardIcon,
+  FarmSwitchIcon,
   MapIcon,
   TaskListIcon,
 } from "@/components/icons/nav-icons";
@@ -69,6 +70,7 @@ export default async function ApplicationsPage({ params }: PageProps) {
 
   const isOwner = access.membership.role === "OWNER";
   const visibleApps = APPS.filter((app) => !app.ownerOnly || isOwner);
+  const hasMultipleFarms = session.farms.length > 1;
 
   return (
     <div className="space-y-6">
@@ -109,6 +111,25 @@ export default async function ApplicationsPage({ params }: PageProps) {
             </Link>
           );
         })}
+        {hasMultipleFarms && (
+          <Link
+            href="/fermes"
+            data-testid="farm-switcher"
+            className="flex items-start gap-4 rounded-xl border border-emerald-200 bg-white p-4 transition hover:border-emerald-400 hover:shadow-sm"
+          >
+            <span className="rounded-lg bg-emerald-100 p-2 text-emerald-700">
+              <FarmSwitchIcon className="h-6 w-6" />
+            </span>
+            <span>
+              <span className="block font-semibold text-emerald-950">
+                Changer de ferme
+              </span>
+              <span className="mt-1 block text-sm text-emerald-800/80">
+                Sélectionner une autre exploitation
+              </span>
+            </span>
+          </Link>
+        )}
       </div>
     </div>
   );

@@ -82,3 +82,43 @@ export function AppGridIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function PowerIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M12 2v10" />
+      <path d="M18.4 6.6a9 9 0 1 1-12.8 0" />
+    </svg>
+  );
+}
+
+export function FarmSwitchIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M3 9h18" />
+      <path d="M3 15h18" />
+      <path d="M7 9v6" />
+      <path d="M17 9v6" />
+      <path d="M9 5 7 9l2 4" />
+      <path d="M15 19 17 15l-2-4" />
+    </svg>
+  );
+}
