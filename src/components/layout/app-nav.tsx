@@ -44,7 +44,7 @@ export function AppNav() {
           </p>
         </div>
         {links.length > 0 && (
-          <nav className="flex flex-wrap gap-2">
+          <nav className="hidden flex-wrap gap-2 md:flex">
             {links
               .filter((link) => !link.ownerOnly || isOwner)
               .map((link) => {
