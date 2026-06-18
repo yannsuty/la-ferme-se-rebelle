@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  EMPLOYEE
+}
+
+enum ParcelType {
+  PASTURE
+  FIELD
+}
+
+enum MilkingSession {
+  MORNING
+  EVENING
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(EMPLOYEE)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  grazingAssignments GrazingAssignment[] @relation("AssignedBy")
+
+  @@map("users")
+}
+
+model Pasture {
+  id          String     @id @default(cuid())
+  name        String
+  type        ParcelType @default(PASTURE)
+  description String?
+  /// Polygone GeoJSON : { type: "Polygon", coordinates: [[[lng, lat], ...]] }
+  geometry    Json
+  color       String     @default("#22c55e")
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  grazingAssignments GrazingAssignment[]
+
+  @@map("pastures")
+}
+
+model GrazingAssignment {
+  id           String         @id @default(cuid())
+  date         DateTime       @db.Date
+  session      MilkingSession
+  pastureId    String
+  assignedById String
+  notes        String?
+  createdAt    DateTime       @default(now())
+
+  pasture    Pasture @relation(fields: [pastureId], references: [id], onDelete: Cascade)
+  assignedBy User    @relation("AssignedBy", fields: [assignedById], references: [id])
+
+  @@unique([date, session])
+  @@index([pastureId])
+  @@map("grazing_assignments")
+}

@@ -1,0 +1,94 @@
+---
+description: Règles de tests unitaires (80% couverture), tests fonctionnels Playwright et génération du récapitulatif
+globs:
+  - "**/*.{ts,tsx,js,jsx}"
+  - "**/*.test.{ts,tsx}"
+  - "**/*.spec.{ts,tsx}"
+  - "e2e/**"
+  - "vitest.config.*"
+  - "playwright.config.*"
+alwaysApply: false
+---
+
+# Tests — Ferme laitière PWA
+
+## Objectif de couverture
+
+- **Couverture unitaire minimale : 80 %** (lignes, branches, fonctions, statements).
+- Seuil configuré dans `vitest.config.ts` via `coverage.thresholds`.
+- Toute nouvelle fonctionnalité doit inclure des tests unitaires avant merge.
+
+## Tests unitaires (Vitest)
+
+- Framework : **Vitest** + **@testing-library/react** pour les composants.
+- Emplacement : fichiers `*.test.ts` / `*.test.tsx` à côté du code ou dans `__tests__/`.
+- Tester en priorité :
+  - Logique métier (`lib/`, services, utilitaires)
+  - Validation Zod des schémas API
+  - Composants critiques (formulaires auth, carte pâtures)
+  - Hooks personnalisés
+- Mocker Prisma et les appels externes ; ne pas toucher la vraie BDD en unitaire.
+- Commandes :
+  - `npm run test` — exécution unique
+  - `npm run test:watch` — mode watch
+  - `npm run test:coverage` — rapport de couverture
+
+## Tests fonctionnels (Playwright)
+
+- Framework : **Playwright** dans le dossier `e2e/`.
+- Scénarios obligatoires par fonctionnalité :
+  1. Parcours complet (happy path)
+  2. Cas d’erreur visible pour l’utilisateur (validation, accès refusé)
+- Utiliser `data-testid` pour les sélecteurs stables.
+- Base URL : `http://localhost:3000` (voir `playwright.config.ts`).
+- Commandes :
+  - `npm run test:e2e` — headless
+  - `npm run test:e2e:ui` — interface Playwright
+
+## Fichier récapitulatif des tests
+
+Après chaque session de développement ou avant une PR, **générer ou mettre à jour** :
+
+`docs/tests/RECAP_TESTS.md`
+
+Contenu attendu :
+
+```markdown
+# Récapitulatif des tests — [date ISO]
+
+## Synthèse
+| Type | Fichiers | Passés | Échoués | Couverture |
+|------|----------|--------|---------|------------|
+
+## Tests unitaires
+- Liste des suites et cas principaux
+
+## Tests fonctionnels (Playwright)
+- Liste des scénarios e2e
+
+## Couverture par module
+| Module | Lignes | Branches | Fonctions |
+|--------|--------|----------|-----------|
+
+## Commandes exécutées
+- npm run test:coverage
+- npm run test:e2e
+
+## Notes / dette technique
+```
+
+Génération automatisée : `npm run test:report` (script qui lance couverture + e2e et met à jour le récap).
+
+## Workflow obligatoire avant PR
+
+1. `npm run test:coverage` — vérifier ≥ 80 %
+2. `npm run test:e2e` — tous les scénarios verts
+3. `npm run test:report` — régénérer `docs/tests/RECAP_TESTS.md`
+4. Corriger les régressions avant de pousser
+
+## Bonnes pratiques
+
+- Un test = un comportement observable.
+- Nommer les tests en français : `devrait afficher la carte des pâtures pour un patron`.
+- Éviter les tests fragiles (timeouts arbitraires, sélecteurs CSS profonds).
+- Les tests e2e d’auth utilisent des comptes seed définis dans `prisma/seed.ts`.

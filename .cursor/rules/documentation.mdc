@@ -1,0 +1,104 @@
+---
+description: Génération et maintenance de la documentation (cas d'usage, architecture, base de données)
+globs:
+  - "docs/**"
+  - "prisma/schema.prisma"
+  - "src/**"
+  - "app/**"
+alwaysApply: false
+---
+
+# Documentation — Ferme laitière PWA
+
+## Structure documentaire
+
+Maintenir à jour les fichiers suivants dans `docs/` :
+
+```
+docs/
+├── architecture/
+│   └── ARCHITECTURE.md      # Stack, déploiement, flux, diagrammes
+├── use-cases/
+│   └── USE_CASES.md         # Cas d'usage par rôle et fonctionnalité
+├── database/
+│   └── DATABASE.md          # Schéma, relations, index, migrations
+└── tests/
+    └── RECAP_TESTS.md       # (voir règle testing.mdc)
+```
+
+## Cas d'usage (`docs/use-cases/USE_CASES.md`)
+
+Pour chaque fonctionnalité, documenter :
+
+```markdown
+## UC-XX — [Titre]
+
+| Champ | Valeur |
+|-------|--------|
+| Acteur | Patron / Employé |
+| Préconditions | ... |
+| Déclencheur | ... |
+| Scénario principal | 1. ... 2. ... |
+| Scénario alternatif | ... |
+| Postconditions | ... |
+| Règles métier | ... |
+```
+
+Numérotation : `UC-01`, `UC-02`, etc.
+Langue : **français**.
+
+## Architecture (`docs/architecture/ARCHITECTURE.md`)
+
+Inclure obligatoirement :
+
+1. **Vue d'ensemble** — objectif de l'application
+2. **Stack technique** — Next.js, Prisma, Neon, Vercel, PWA
+3. **Structure des dossiers** — arborescence commentée
+4. **Flux principaux** — auth, API, rendu carte (diagrammes Mermaid)
+5. **Déploiement** — Vercel + variables d'environnement Neon
+6. **Sécurité** — rôles, sessions, validation entrées
+7. **Évolutions prévues** — autres types d'élevage
+
+Exemple de diagramme :
+
+```mermaid
+flowchart LR
+  Client[PWA Client] --> Next[Next.js App Router]
+  Next --> API[API Routes]
+  API --> Prisma[Prisma ORM]
+  Prisma --> Neon[(PostgreSQL Neon)]
+```
+
+## Base de données (`docs/database/DATABASE.md`)
+
+Synchroniser avec `prisma/schema.prisma` :
+
+1. **Diagramme entité-relation** (Mermaid `erDiagram`)
+2. **Tables** — colonnes, types, contraintes, description métier
+3. **Relations** — cardinalités
+4. **Index** — et justification
+5. **Enums** — valeurs et sens métier
+6. **Seed** — données de démo
+7. **Historique des migrations** — résumé des changements
+
+À chaque modification du schéma Prisma :
+
+1. Créer la migration (`npx prisma migrate dev`)
+2. Mettre à jour `DATABASE.md` dans la même PR
+3. Mettre à jour les cas d'usage impactés
+
+## Workflow obligatoire
+
+Lors de l'ajout ou modification d'une fonctionnalité :
+
+1. Ajouter/mettre à jour le cas d'usage dans `USE_CASES.md`
+2. Si impact technique : mettre à jour `ARCHITECTURE.md`
+3. Si impact données : mettre à jour `DATABASE.md` + schéma Prisma
+4. Vérifier la cohérence entre docs et code
+
+## Style
+
+- Français, phrases complètes
+- Diagrammes Mermaid pour architecture et BDD
+- Liens relatifs entre documents
+- Date de dernière mise à jour en en-tête de chaque fichier
