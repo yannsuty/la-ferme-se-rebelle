@@ -79,17 +79,25 @@ Réponse attendue : `{"app":"ok","database":"ok",...}`
 
 Page de connexion : `https://votre-app.vercel.app/connexion`
 
-### Erreur 404 sur Vercel
+### Erreur 404 sur Vercel (`NOT_FOUND`)
 
-Si vous voyez `404 NOT_FOUND` :
+Si `/api/health` ou toute autre URL renvoie `404 NOT_FOUND` avec `x-vercel-error: NOT_FOUND`, **l'application n'est pas déployée sur ce domaine** (problème Vercel, pas de code).
 
-1. **Vercel → Deployments** : vérifiez que le dernier déploiement de `main` est **Ready** (vert)
-2. Cliquez sur **⋯ → Promote to Production** si besoin
-3. **Settings → Git** : branche de production = `main`
-4. **Settings → Domains** : le domaine `*.vercel.app` doit pointer vers la prod
-5. Vérifiez les logs de build : échec de migration = redeploy après avoir configuré `DIRECT_URL`
+**Vérifications dans Vercel :**
 
-Le seed et les migrations **ne s'exécutent pas au runtime** — uniquement pendant le build Vercel (ou manuellement en local).
+1. **Settings → General → Framework Preset** = `Next.js`
+2. **Settings → Git → Production Branch** = `main`
+3. **Deployments** → dernier build `main` **Ready** → **Promote to Production**
+4. **Settings → Domains** : `la-ferme-se-rebelle.vercel.app` doit apparaître
+5. **Settings → Deployment Protection** : désactiver la protection sur **Production** (sinon 401 sur les URLs de preview)
+
+**Test après correction :**
+```
+https://la-ferme-se-rebelle.vercel.app/api/health
+→ {"app":"ok","database":"ok"} ou {"database":"error"} (503)
+```
+
+Un `database: "error"` = app déployée mais BDD à configurer (pas une 404).
 
 ## Documentation
 
