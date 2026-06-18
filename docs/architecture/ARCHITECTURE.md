@@ -72,14 +72,42 @@ flowchart TD
 
 ## Déploiement
 
+### Environnements Vercel
+
+Trois projets Vercel, un par environnement, connectés au même dépôt :
+
+| Environnement | Branche | URL |
+|---------------|---------|-----|
+| Production | `main` | https://la-ferme-se-rebelle.vercel.app |
+| Staging | `staging` | https://la-ferme-se-rebelle-staging.vercel.app |
+| Dev | `develop` | https://la-ferme-se-rebelle-dev.vercel.app |
+
+```mermaid
+flowchart LR
+  subgraph git [Git]
+    F[feature/*] --> develop
+    develop --> staging
+    staging --> main
+  end
+  subgraph vercel [Vercel]
+    develop --> Dev[la-ferme-se-rebelle-dev]
+    staging --> Stg[la-ferme-se-rebelle-staging]
+    main --> Prod[la-ferme-se-rebelle]
+  end
+```
+
+Voir [DEPLOYMENT.md](../DEPLOYMENT.md) pour la configuration détaillée et le dépannage.
+
 ### Variables d'environnement (Vercel)
 
 - `DATABASE_URL` — URL poolée Neon (`-pooler`) pour l'application
 - `DIRECT_URL` — URL directe pour migrations Prisma CLI
 - `AUTH_SECRET` — secret JWT (32+ octets aléatoires)
-- `AUTH_URL` — URL publique de l'app
+- `AUTH_URL` — URL publique de l'environnement (distincte par projet Vercel)
 
 ### Pipeline build
+
+Script `scripts/vercel-build.mjs` :
 
 1. `prisma generate`
 2. `prisma migrate deploy`
