@@ -15,6 +15,13 @@ async function login(page: import("@playwright/test").Page, user: typeof OWNER) 
 }
 
 test.describe("Authentification", () => {
+  test("devrait afficher les comptes de test hors production", async ({ page }) => {
+    await page.goto("/connexion");
+    await expect(page.getByTestId("demo-credentials")).toBeVisible();
+    await expect(page.getByTestId("demo-email-patron")).toContainText("patron@ferme.local");
+    await expect(page.getByTestId("demo-password-patron")).toContainText("patron1234");
+  });
+
   test("devrait refuser des identifiants invalides", async ({ page }) => {
     await page.goto("/connexion");
     await page.getByTestId("login-email").fill("invalide@test.local");
