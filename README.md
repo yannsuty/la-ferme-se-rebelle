@@ -42,6 +42,22 @@ npm run test:report       # génère docs/tests/RECAP_TESTS.md
 
 ## Déploiement Vercel
 
+> Guide complet : **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
+
+### Diagnostic en 10 secondes
+
+```bash
+# 1. Fichier statique (ne nécessite pas la BDD)
+curl https://la-ferme-se-rebelle.vercel.app/health.json
+
+# 2. API avec test BDD
+curl https://la-ferme-se-rebelle.vercel.app/api/health
+```
+
+- **404** sur les deux → domaine Vercel non assigné (voir guide)
+- **401** → protection Vercel active (Settings → Deployment Protection)
+- **200** sur `/health.json` → l'app est déployée ✓
+
 ### Variables d'environnement obligatoires
 
 | Variable | Description |
