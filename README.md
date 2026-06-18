@@ -42,9 +42,54 @@ npm run test:report       # génère docs/tests/RECAP_TESTS.md
 
 ## Déploiement Vercel
 
-1. Créer un projet Neon et copier `DATABASE_URL`
-2. Variables Vercel : `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`
-3. Build : `prisma generate && prisma migrate deploy && next build`
+### Variables d'environnement obligatoires
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | URL poolée Neon (`-pooler`) |
+| `DIRECT_URL` | URL directe Neon (migrations) |
+| `AUTH_SECRET` | Secret JWT (32+ octets aléatoires) |
+| `AUTH_URL` | URL publique de l'app (ex. `https://la-ferme-se-rebelle.vercel.app`) |
+
+### Script de setup au build
+
+Le build Vercel exécute automatiquement `scripts/vercel-build.mjs` :
+
+1. `prisma generate`
+2. `prisma migrate deploy` (si `DATABASE_URL` / `DIRECT_URL` présentes)
+3. `next build`
+
+Pour lancer le **seed** automatiquement au premier déploiement, ajoutez :
+
+```
+RUN_DB_SEED=true
+```
+
+(puis retirez-la après le premier déploiement réussi)
+
+### Vérifier que l'app fonctionne
+
+Après déploiement, testez :
+
+```
+https://votre-app.vercel.app/api/health
+```
+
+Réponse attendue : `{"app":"ok","database":"ok",...}`
+
+Page de connexion : `https://votre-app.vercel.app/connexion`
+
+### Erreur 404 sur Vercel
+
+Si vous voyez `404 NOT_FOUND` :
+
+1. **Vercel → Deployments** : vérifiez que le dernier déploiement de `main` est **Ready** (vert)
+2. Cliquez sur **⋯ → Promote to Production** si besoin
+3. **Settings → Git** : branche de production = `main`
+4. **Settings → Domains** : le domaine `*.vercel.app` doit pointer vers la prod
+5. Vérifiez les logs de build : échec de migration = redeploy après avoir configuré `DIRECT_URL`
+
+Le seed et les migrations **ne s'exécutent pas au runtime** — uniquement pendant le build Vercel (ou manuellement en local).
 
 ## Documentation
 
