@@ -10,16 +10,25 @@ export const authConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const pathname = nextUrl.pathname;
-      const isPublic =
-        pathname.startsWith("/connexion") || pathname.startsWith("/api/auth");
+      const isAuthRoute = pathname.startsWith("/api/auth");
+      const isPublicPage = pathname === "/connexion";
 
-      if (!isLoggedIn && !isPublic) return false;
+      if (pathname.startsWith("/api/") && !isAuthRoute) {
+        return true;
+      }
+
+      if (!isLoggedIn && !isPublicPage && !isAuthRoute) {
+        return false;
+      }
+
       if (isLoggedIn && pathname === "/connexion") {
         return Response.redirect(new URL("/tableau-de-bord", nextUrl));
       }
+
       if (pathname.startsWith("/admin") && auth?.user?.role !== "OWNER") {
         return Response.redirect(new URL("/tableau-de-bord", nextUrl));
       }
+
       return true;
     },
     async jwt({ token, user }) {
