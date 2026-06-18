@@ -104,7 +104,11 @@ async function main() {
 
   const patron = await prisma.user.upsert({
     where: { email: "patron@ferme.local" },
-    update: {},
+    update: {
+      name: "Jean Patron",
+      passwordHash: ownerPassword,
+      active: true,
+    },
     create: {
       email: "patron@ferme.local",
       name: "Jean Patron",
@@ -114,7 +118,11 @@ async function main() {
 
   const employee = await prisma.user.upsert({
     where: { email: "employe@ferme.local" },
-    update: {},
+    update: {
+      name: "Marie Employée",
+      passwordHash: employeePassword,
+      active: true,
+    },
     create: {
       email: "employe@ferme.local",
       name: "Marie Employée",
@@ -137,7 +145,10 @@ async function main() {
           farmId: membership.farmId,
         },
       },
-      update: {},
+      update: {
+        role: membership.role,
+        active: true,
+      },
       create: membership,
     });
   }

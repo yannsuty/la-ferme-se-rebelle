@@ -5,6 +5,7 @@ import { loginSchema } from "@/lib/validations";
 import { verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
+import { isProductionApp } from "@/lib/env";
 
 export type FarmMembershipSummary = {
   id: string;
@@ -65,13 +66,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           },
         });
 
-        if (!user || !user.active || user.memberships.length === 0) return null;
+        if (!user || !user.active || user.memberships.length === 0) {
+          if (!isProductionApp()) {
+            console.warn("[auth] Connexion refusée", {
+              email: parsed.data.email.toLowerCase(),
+              userFound: Boolean(user),
+              userActive: user?.active ?? false,
+              memberships: user?.memberships.length ?? 0,
+            });
+          }
+          return null;
+        }
 
         const valid = await verifyPassword(
           parsed.data.password,
           user.passwordHash,
         );
-        if (!valid) return null;
+        if (!valid) {
+          if (!isProductionApp()) {
+            console.warn("[auth] Mot de passe incorrect", {
+              email: parsed.data.email.toLowerCase(),
+            });
+          }
+          return null;
+        }
 
         return {
           id: user.id,
