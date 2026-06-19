@@ -1,0 +1,62 @@
+---
+description: Rôles, permissions et matrice de droits
+globs:
+  - "src/lib/permissions.ts"
+  - "src/lib/roles.ts"
+  - "src/lib/farm-auth.ts"
+  - "src/lib/auth.config.ts"
+  - "src/app/api/**"
+  - "src/app/f/**"
+  - "src/components/**"
+alwaysApply: false
+---
+
+# Permissions — Ferme laitière PWA
+
+## Source de vérité
+
+- **Code** : `src/lib/permissions.ts`
+- **Documentation** : `docs/permissions/MATRICE_DROITS.md`
+
+Toute modification de droits doit mettre à jour ces deux fichiers dans la même PR.
+
+## Rôles par ferme
+
+| Enum | Libellé | Description |
+|------|---------|-------------|
+| `OWNER` | Patron | Contrôle total sur la ferme |
+| `MANAGER` | Gérant | Administration opérationnelle (équipe, parcelles) |
+| `EMPLOYEE` | Employé | Consultation et saisie terrain |
+
+Rôle global hors ferme : `users.isSystemAdmin` (administrateur système).
+
+## Règles d'implémentation
+
+1. **Ne pas** comparer `role === "OWNER"` pour l'accès admin ferme — utiliser `canAccessFarmAdmin(role)`.
+2. **Ne pas** dupliquer la matrice dans les composants — importer depuis `permissions.ts`.
+3. Routes API protégées : `requireFarmAuth(farmSlug, FARM_ADMIN_ROLES)` ou rôle spécifique.
+4. Création de membre : vérifier `canAssignRole(actorRole, targetRole)`.
+5. Modification / retrait : vérifier `canModifyMember(actorRole, targetMemberRole)`.
+6. Création de ferme : compte gérant initial obligatoire (`createFarmSchema.manager`).
+
+## Matrice résumée
+
+| Permission | Patron | Gérant | Employé |
+|------------|:------:|:------:|:-------:|
+| Admin ferme (utilisateurs, parcelles) | ✓ | ✓ | ✗ |
+| Gérer parcelles | ✓ | ✓ | ✗ |
+| Gérer membres | ✓ | ✓ | ✗ |
+| Créer un patron | ✓ | ✗ | ✗ |
+| Créer gérant / employé | ✓ | ✓ | ✗ |
+| Sorties après traite | ✓ | ✓ | ✓ |
+
+Voir la matrice complète (incl. admin système) dans `docs/permissions/MATRICE_DROITS.md`.
+
+## Workflow obligatoire
+
+Lors de l'ajout ou modification d'un droit :
+
+1. Mettre à jour `src/lib/permissions.ts`
+2. Mettre à jour `docs/permissions/MATRICE_DROITS.md`
+3. Ajouter/mettre à jour les tests dans `src/lib/permissions.test.ts`
+4. Mettre à jour les cas d'usage impactés dans `docs/use-cases/USE_CASES.md`

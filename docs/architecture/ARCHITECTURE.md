@@ -1,6 +1,6 @@
 # Architecture — La Ferme se Rebelle
 
-> Dernière mise à jour : 2025-06-18
+> Dernière mise à jour : 2025-06-19
 
 ## Vue d'ensemble
 
@@ -14,7 +14,7 @@ Application PWA de gestion d'une ferme laitière. Première version centrée sur
 | PWA | `@ducanh2912/next-pwa`, manifest, icônes |
 | Cartographie | Leaflet, react-leaflet, leaflet-draw, tuiles OpenStreetMap |
 | API | Next.js Route Handlers (`/api/*`) |
-| Auth | NextAuth.js v5, JWT, rôles OWNER / EMPLOYEE |
+| Auth | NextAuth.js v5, JWT, rôles OWNER / MANAGER / EMPLOYEE |
 | ORM | Prisma 7 |
 | Base de données | PostgreSQL (Neon) |
 | Hébergement | Vercel |
@@ -24,23 +24,39 @@ Application PWA de gestion d'une ferme laitière. Première version centrée sur
 
 ```
 src/
-├── app/                    # Pages et routes API (App Router)
-│   ├── admin/              # Administration (patron)
-│   ├── api/                # REST : users, pastures, grazing
-│   ├── carte/              # Carte pâtures + sorties traite
-│   └── connexion/          # Page de login
-├── components/             # UI réutilisable
-├── lib/                    # Auth, Prisma, validations, geo
-└── generated/prisma/       # Client Prisma généré
+├── app/
+│   ├── f/[farmSlug]/       # Pages scopées par ferme (slug URL)
+│   │   ├── tableau-de-bord/
+│   │   ├── carte/
+│   │   └── admin/
+│   ├── fermes/             # Sélecteur si multi-fermes
+│   ├── api/f/[farmSlug]/   # API REST par ferme
+│   └── connexion/
+├── components/
+├── lib/
+│   ├── farm-auth.ts        # Vérification d'accès ferme
+│   ├── permissions.ts      # Matrice de droits (source de vérité code)
+│   └── farm-path.ts        # Helpers de chemins /f/{slug}
 prisma/
-├── schema.prisma           # Modèle de données
-├── migrations/             # Migrations SQL
-└── seed.ts                 # Données de démo
-docs/                       # Documentation projet
-e2e/                        # Tests Playwright
+docs/
+e2e/
 ```
 
 ## Flux principaux
+
+### Routage multi-fermes
+
+```mermaid
+flowchart TD
+  L[Connexion] --> F{Plusieurs fermes ?}
+  F -->|Oui| S[/fermes — sélecteur]
+  F -->|Non| D["/f/{slug}/tableau-de-bord"]
+  S --> D
+  D --> C["/f/{slug}/carte"]
+  D --> A["/f/{slug}/admin/*"]
+```
+
+Un utilisateur peut appartenir à plusieurs fermes avec un rôle distinct par ferme (`farm_memberships`).
 
 ### Authentification
 
@@ -72,14 +88,42 @@ flowchart TD
 
 ## Déploiement
 
+### Environnements Vercel
+
+Trois projets Vercel, un par environnement, connectés au même dépôt :
+
+| Environnement | Branche | URL |
+|---------------|---------|-----|
+| Production | `main` | https://la-ferme-se-rebelle.vercel.app |
+| Staging | `staging` | https://la-ferme-se-rebelle-staging.vercel.app |
+| Dev | `develop` | https://la-ferme-se-rebelle-dev.vercel.app |
+
+```mermaid
+flowchart LR
+  subgraph git [Git]
+    F[feature/*] --> develop
+    develop --> staging
+    staging --> main
+  end
+  subgraph vercel [Vercel]
+    develop --> Dev[la-ferme-se-rebelle-dev]
+    staging --> Stg[la-ferme-se-rebelle-staging]
+    main --> Prod[la-ferme-se-rebelle]
+  end
+```
+
+Voir [DEPLOYMENT.md](../DEPLOYMENT.md) pour la configuration détaillée et le dépannage.
+
 ### Variables d'environnement (Vercel)
 
 - `DATABASE_URL` — URL poolée Neon (`-pooler`) pour l'application
 - `DIRECT_URL` — URL directe pour migrations Prisma CLI
 - `AUTH_SECRET` — secret JWT (32+ octets aléatoires)
-- `AUTH_URL` — URL publique de l'app
+- `AUTH_URL` — URL publique de l'environnement (distincte par projet Vercel)
 
 ### Pipeline build
+
+Script `scripts/vercel-build.mjs` :
 
 1. `prisma generate`
 2. `prisma migrate deploy`
@@ -89,11 +133,15 @@ flowchart TD
 
 - Mots de passe hashés (bcrypt, 12 rounds)
 - Middleware protège toutes les routes sauf `/connexion`
-- Routes `/admin/*` réservées au rôle `OWNER`
+- Routes `/f/{slug}/admin/*` réservées aux rôles `OWNER` et `MANAGER` **dans la ferme**
+- API `/api/f/{slug}/*` : vérification d'adhésion en base (`farm_memberships`)
 - Validation Zod sur toutes les entrées API
+- Matrice de droits documentée : [`docs/permissions/MATRICE_DROITS.md`](../permissions/MATRICE_DROITS.md)
+- Implémentation centralisée : `src/lib/permissions.ts`
 
 ## Évolutions prévues
 
-- Multi-fermes / multi-espèces
+- Invitation d'utilisateurs existants sans mot de passe
+- Multi-espèces (autres types d'élevage)
 - Mode hors-ligne avancé (sync IndexedDB)
 - Notifications push pour rappels de traite

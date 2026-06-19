@@ -41,6 +41,14 @@ export function leafletLatLngsToGeoJson(
   return { type: "Polygon", coordinates: [coordinates] };
 }
 
+export function escapeHtml(text: string): string {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
 export function formatSessionLabel(session: "MORNING" | "EVENING"): string {
   return session === "MORNING" ? "Traite du matin" : "Traite du soir";
 }

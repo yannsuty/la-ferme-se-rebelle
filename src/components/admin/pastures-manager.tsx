@@ -3,12 +3,14 @@
 import { FormEvent, useState } from "react";
 import { PastureDrawMap } from "@/components/map/pasture-draw-map";
 import type { PastureData } from "@/components/map/pasture-map";
+import { farmApiPath } from "@/lib/farm-path";
 import { formatParcelType } from "@/lib/geo";
 import type { PastureInput } from "@/lib/validations";
 
 type GeoPolygon = PastureInput["geometry"];
 
 type Props = {
+  farmSlug: string;
   initialPastures: PastureData[];
 };
 
@@ -26,7 +28,7 @@ const EMPTY_FORM: FormState = {
   color: "#22c55e",
 };
 
-export function PasturesManager({ initialPastures }: Props) {
+export function PasturesManager({ farmSlug, initialPastures }: Props) {
   const [pastures, setPastures] = useState<PastureData[]>(initialPastures);
   const [mode, setMode] = useState<"list" | "form">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function PasturesManager({ initialPastures }: Props) {
   const [loading, setLoading] = useState(false);
 
   async function loadPastures() {
-    const response = await fetch("/api/pastures");
+    const response = await fetch(farmApiPath(farmSlug, "/pastures"));
     if (!response.ok) {
       setError("Impossible de charger les parcelles");
       return;
@@ -97,7 +99,9 @@ export function PasturesManager({ initialPastures }: Props) {
     };
 
     const response = await fetch(
-      editingId ? `/api/pastures/${editingId}` : "/api/pastures",
+      editingId
+        ? farmApiPath(farmSlug, `/pastures/${editingId}`)
+        : farmApiPath(farmSlug, "/pastures"),
       {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,7 +135,7 @@ export function PasturesManager({ initialPastures }: Props) {
     setMessage(null);
     setLoading(true);
 
-    const response = await fetch(`/api/pastures/${pasture.id}`, {
+    const response = await fetch(farmApiPath(farmSlug, `/pastures/${pasture.id}`), {
       method: "DELETE",
     });
 

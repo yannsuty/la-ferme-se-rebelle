@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   createUserSchema,
+  createFarmSchema,
+  databaseResetSchema,
   grazingAssignmentSchema,
   loginSchema,
   pastureSchema,
@@ -31,6 +33,16 @@ describe("createUserSchema", () => {
       password: "motdepasse",
       name: "Paul",
       role: "EMPLOYEE",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("devrait valider la création d'un gérant", () => {
+    const result = createUserSchema.safeParse({
+      email: "gerant@ferme.local",
+      password: "motdepasse",
+      name: "Paul",
+      role: "MANAGER",
     });
     expect(result.success).toBe(true);
   });
@@ -67,5 +79,41 @@ describe("grazingAssignmentSchema", () => {
       pastureId: "clxyz123",
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("createFarmSchema", () => {
+  it("devrait valider une ferme avec compte gérant", () => {
+    const result = createFarmSchema.safeParse({
+      name: "Ma Ferme",
+      manager: {
+        name: "Paul Gérant",
+        email: "gerant@ferme.local",
+        password: "motdepasse",
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("devrait rejeter une ferme sans compte gérant", () => {
+    const result = createFarmSchema.safeParse({ name: "Ma Ferme" });
+    expect(result.success).toBe(false);
+  });
+
+  it("devrait rejeter un slug invalide", () => {
+    const result = createFarmSchema.safeParse({
+      name: "Ma Ferme",
+      slug: "Slug Invalide",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("databaseResetSchema", () => {
+  it("devrait exiger la confirmation exacte", () => {
+    const ok = databaseResetSchema.safeParse({ confirmation: "REINITIALISER" });
+    const ko = databaseResetSchema.safeParse({ confirmation: "reset" });
+    expect(ok.success).toBe(true);
+    expect(ko.success).toBe(false);
   });
 });

@@ -1,19 +1,41 @@
 # Base de données — La Ferme se Rebelle
 
-> Dernière mise à jour : 2025-06-18
+> Dernière mise à jour : 2025-06-19
 
 ## Diagramme entité-relation
 
 ```mermaid
 erDiagram
-  users ||--o{ grazing_assignments : "assigne"
+  farms ||--o{ farm_memberships : "a"
+  users ||--o{ farm_memberships : "appartient"
+  farms ||--o{ pastures : "contient"
+  farms ||--o{ grazing_assignments : "planifie"
   pastures ||--o{ grazing_assignments : "reçoit"
+  users ||--o{ grazing_assignments : "assigne"
+
+  farms {
+    text id PK
+    text name
+    text slug UK
+    boolean active
+    datetime createdAt
+    datetime updatedAt
+  }
 
   users {
     text id PK
     text email UK
     text passwordHash
     text name
+    boolean active
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  farm_memberships {
+    text id PK
+    text userId FK
+    text farmId FK
     enum role
     boolean active
     datetime createdAt
@@ -22,6 +44,7 @@ erDiagram
 
   pastures {
     text id PK
+    text farmId FK
     text name
     enum type
     text description
@@ -34,6 +57,7 @@ erDiagram
 
   grazing_assignments {
     text id PK
+    text farmId FK
     date date
     enum session
     text pastureId FK
@@ -47,13 +71,25 @@ erDiagram
 
 | Enum | Valeurs | Description |
 |------|---------|-------------|
-| `Role` | `OWNER`, `EMPLOYEE` | Patron ou employé |
+| `Role` | `OWNER`, `MANAGER`, `EMPLOYEE` | Rôle **par ferme** (via `farm_memberships`) |
 | `ParcelType` | `PASTURE`, `FIELD` | Pâture ou champ |
 | `MilkingSession` | `MORNING`, `EVENING` | Traite matin ou soir |
 
 ## Tables
 
+### `farms`
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| id | TEXT | PK, cuid | Identifiant |
+| name | TEXT | NOT NULL | Nom affiché |
+| slug | TEXT | UNIQUE, NOT NULL | Identifiant URL (`/f/{slug}/...`) |
+| active | BOOLEAN | DEFAULT true | Ferme active |
+| createdAt / updatedAt | TIMESTAMP | auto | Audit |
+
 ### `users`
+
+Compte global (email unique). Le rôle est porté par `farm_memberships`.
 
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
@@ -61,16 +97,29 @@ erDiagram
 | email | TEXT | UNIQUE, NOT NULL | Connexion |
 | passwordHash | TEXT | NOT NULL | bcrypt |
 | name | TEXT | NOT NULL | Nom affiché |
-| role | Role | DEFAULT EMPLOYEE | Patron ou employé |
 | active | BOOLEAN | DEFAULT true | Compte actif |
-| createdAt | TIMESTAMP | auto | Création |
-| updatedAt | TIMESTAMP | auto | Mise à jour |
+| isSystemAdmin | BOOLEAN | DEFAULT false | Administrateur plateforme |
+| createdAt / updatedAt | TIMESTAMP | auto | Audit |
+
+### `farm_memberships`
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| id | TEXT | PK | Identifiant |
+| userId | TEXT | FK → users | Utilisateur |
+| farmId | TEXT | FK → farms | Ferme |
+| role | Role | DEFAULT EMPLOYEE | Patron, gérant ou employé **dans cette ferme** |
+| active | BOOLEAN | DEFAULT true | Accès à la ferme |
+| createdAt / updatedAt | TIMESTAMP | auto | Audit |
+
+**Contrainte unique** : `(userId, farmId)` — un utilisateur ne peut avoir qu'une adhésion par ferme.
 
 ### `pastures`
 
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
 | id | TEXT | PK | Identifiant |
+| farmId | TEXT | FK → farms | Ferme propriétaire |
 | name | TEXT | NOT NULL | Nom parcelle |
 | type | ParcelType | DEFAULT PASTURE | Pâture ou champ |
 | description | TEXT | nullable | Notes |
@@ -84,6 +133,7 @@ erDiagram
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
 | id | TEXT | PK | Identifiant |
+| farmId | TEXT | FK → farms | Ferme |
 | date | DATE | NOT NULL | Jour concerné |
 | session | MilkingSession | NOT NULL | Matin ou soir |
 | pastureId | TEXT | FK → pastures | Parcelle cible |
@@ -91,30 +141,40 @@ erDiagram
 | notes | TEXT | nullable | Commentaire |
 | createdAt | TIMESTAMP | auto | Horodatage |
 
-**Contrainte unique** : `(date, session)` — une seule sortie par traite et par jour.
+**Contrainte unique** : `(farmId, date, session)` — une seule sortie par traite et par jour **par ferme**.
 
 ## Index
 
 | Index | Colonnes | Justification |
 |-------|----------|---------------|
+| `farms_slug_key` | slug | Routage URL |
 | `users_email_key` | email | Unicité connexion |
-| `grazing_assignments_date_session_key` | date, session | Règle métier |
-| `grazing_assignments_pastureId_idx` | pastureId | Jointures carte |
+| `farm_memberships_userId_farmId_key` | userId, farmId | Une adhésion par couple |
+| `grazing_assignments_farmId_date_session_key` | farmId, date, session | Règle métier |
+| `pastures_farmId_idx` | farmId | Filtrage par ferme |
 
 ## Seed (données de démo)
 
-| Email | Mot de passe | Rôle |
-|-------|--------------|------|
-| patron@ferme.local | patron1234 | OWNER |
-| employe@ferme.local | employe1234 | EMPLOYEE |
+| Ferme | Slug |
+|-------|------|
+| La Ferme se Rebelle | `ferme-rebelle` |
+| Ferme des Collines | `ferme-des-collines` |
 
-3 parcelles : Pâture Nord, Pâture Sud, Champ Est (polygones autour de 47°N, 2°E).
+| Email | Mot de passe | Fermes |
+|-------|--------------|--------|
+| admin@test.local | admin12345678 | Aucune (admin système) |
+| patron@ferme.local | patron1234 | Les deux (OWNER) |
+| gerant@ferme.local | gerant1234 | Rebelle (MANAGER) |
+| employe@ferme.local | employe1234 | Les deux (EMPLOYEE) |
 
 ## Migrations
 
 | Migration | Description |
 |-----------|-------------|
-| `20250618000000_init` | Schéma initial users, pastures, grazing_assignments |
+| `20250618000000_init` | Schéma initial |
+| `20250618120000_multi_farm` | Fermes, adhésions, scope par ferme |
+| `20250619120000_system_admin` | Flag `isSystemAdmin` sur `users` |
+| `20250619140000_manager_role` | Valeur `MANAGER` dans l'enum `Role` |
 
 ## Commandes
 

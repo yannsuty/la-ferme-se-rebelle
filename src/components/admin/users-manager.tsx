@@ -1,31 +1,43 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { farmApiPath } from "@/lib/farm-path";
+import type { Role } from "@/lib/roles";
+import { roleLabel } from "@/lib/roles";
+import { canAssignRole, canModifyMember } from "@/lib/permissions";
 
 type UserRow = {
   id: string;
+  membershipId: string;
   email: string;
   name: string;
-  role: "OWNER" | "EMPLOYEE";
+  role: Role;
   active: boolean;
 };
 
 type Props = {
+  farmSlug: string;
   initialUsers: UserRow[];
+  actorRole: Role;
 };
 
-export function UsersManager({ initialUsers }: Props) {
+const ASSIGNABLE_ROLES: Role[] = ["OWNER", "MANAGER", "EMPLOYEE"];
+
+export function UsersManager({ farmSlug, initialUsers, actorRole }: Props) {
   const [users, setUsers] = useState<UserRow[]>(initialUsers);
   const [error, setError] = useState<string | null>(null);
+  const assignableRoles = ASSIGNABLE_ROLES.filter((role) =>
+    canAssignRole(actorRole, role),
+  );
   const [form, setForm] = useState({
     email: "",
     password: "",
     name: "",
-    role: "EMPLOYEE" as "OWNER" | "EMPLOYEE",
+    role: (assignableRoles[0] ?? "EMPLOYEE") as Role,
   });
 
   async function loadUsers() {
-    const response = await fetch("/api/users");
+    const response = await fetch(farmApiPath(farmSlug, "/users"));
     if (!response.ok) {
       setError("Impossible de charger les utilisateurs");
       return;
@@ -37,7 +49,7 @@ export function UsersManager({ initialUsers }: Props) {
     event.preventDefault();
     setError(null);
 
-    const response = await fetch("/api/users", {
+    const response = await fetch(farmApiPath(farmSlug, "/users"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -49,12 +61,22 @@ export function UsersManager({ initialUsers }: Props) {
       return;
     }
 
-    setForm({ email: "", password: "", name: "", role: "EMPLOYEE" });
+    setForm({
+      email: "",
+      password: "",
+      name: "",
+      role: assignableRoles[0] ?? "EMPLOYEE",
+    });
     await loadUsers();
   }
 
   async function toggleActive(user: UserRow) {
-    await fetch(`/api/users/${user.id}`, {
+    if (!canModifyMember(actorRole, user.role)) {
+      setError("Vous ne pouvez pas modifier ce membre");
+      return;
+    }
+
+    await fetch(farmApiPath(farmSlug, `/users/${user.id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active: !user.active }),
@@ -69,7 +91,7 @@ export function UsersManager({ initialUsers }: Props) {
         className="grid gap-3 rounded-xl border border-emerald-200 bg-white p-4 md:grid-cols-2"
         data-testid="create-user-form"
       >
-        <h2 className="md:col-span-2 text-lg font-semibold">Nouveau compte</h2>
+        <h2 className="md:col-span-2 text-lg font-semibold">Nouveau membre</h2>
         {error && <p className="md:col-span-2 text-sm text-red-600">{error}</p>}
         <input
           placeholder="Nom"
@@ -100,21 +122,22 @@ export function UsersManager({ initialUsers }: Props) {
         />
         <select
           value={form.role}
-          onChange={(e) =>
-            setForm({ ...form, role: e.target.value as "OWNER" | "EMPLOYEE" })
-          }
+          onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
           className="rounded-lg border border-emerald-200 px-3 py-2"
           data-testid="user-role-select"
         >
-          <option value="EMPLOYEE">Employé</option>
-          <option value="OWNER">Patron</option>
+          {assignableRoles.map((role) => (
+            <option key={role} value={role}>
+              {roleLabel(role)}
+            </option>
+          ))}
         </select>
         <button
           type="submit"
           className="md:col-span-2 rounded-lg bg-emerald-600 px-4 py-2 text-white"
           data-testid="create-user-submit"
         >
-          Créer le compte
+          Ajouter à la ferme
         </button>
       </form>
 
@@ -133,31 +156,36 @@ export function UsersManager({ initialUsers }: Props) {
             {users.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-4">
-                  Aucun utilisateur
+                  Aucun membre
                 </td>
               </tr>
             ) : (
-              users.map((user) => (
-                <tr key={user.id} className="border-t border-emerald-100">
-                  <td className="px-4 py-2">{user.name}</td>
-                  <td className="px-4 py-2">{user.email}</td>
-                  <td className="px-4 py-2">
-                    {user.role === "OWNER" ? "Patron" : "Employé"}
-                  </td>
-                  <td className="px-4 py-2">
-                    {user.active ? "Actif" : "Inactif"}
-                  </td>
-                  <td className="px-4 py-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleActive(user)}
-                      className="text-emerald-700 underline"
-                    >
-                      {user.active ? "Désactiver" : "Réactiver"}
-                    </button>
-                  </td>
-                </tr>
-              ))
+              users.map((user) => {
+                const canModify = canModifyMember(actorRole, user.role);
+                return (
+                  <tr key={user.membershipId} className="border-t border-emerald-100">
+                    <td className="px-4 py-2">{user.name}</td>
+                    <td className="px-4 py-2">{user.email}</td>
+                    <td className="px-4 py-2">{roleLabel(user.role)}</td>
+                    <td className="px-4 py-2">
+                      {user.active ? "Actif" : "Inactif"}
+                    </td>
+                    <td className="px-4 py-2">
+                      {canModify ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleActive(user)}
+                          className="text-emerald-700 underline"
+                        >
+                          {user.active ? "Retirer" : "Réactiver"}
+                        </button>
+                      ) : (
+                        <span className="text-emerald-800/50">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

@@ -18,6 +18,8 @@ Maintenir à jour les fichiers suivants dans `docs/` :
 docs/
 ├── architecture/
 │   └── ARCHITECTURE.md      # Stack, déploiement, flux, diagrammes
+├── permissions/
+│   └── MATRICE_DROITS.md    # Matrice de droits par rôle (référence)
 ├── use-cases/
 │   └── USE_CASES.md         # Cas d'usage par rôle et fonctionnalité
 ├── database/
@@ -35,7 +37,7 @@ Pour chaque fonctionnalité, documenter :
 
 | Champ | Valeur |
 |-------|--------|
-| Acteur | Patron / Employé |
+| Acteur | Patron / Gérant / Employé / Admin système |
 | Préconditions | ... |
 | Déclencheur | ... |
 | Scénario principal | 1. ... 2. ... |
@@ -56,7 +58,7 @@ Inclure obligatoirement :
 3. **Structure des dossiers** — arborescence commentée
 4. **Flux principaux** — auth, API, rendu carte (diagrammes Mermaid)
 5. **Déploiement** — Vercel + variables d'environnement Neon
-6. **Sécurité** — rôles, sessions, validation entrées
+6. **Sécurité** — rôles, matrice de droits (`docs/permissions/MATRICE_DROITS.md`), sessions, validation entrées
 7. **Évolutions prévues** — autres types d'élevage
 
 Exemple de diagramme :

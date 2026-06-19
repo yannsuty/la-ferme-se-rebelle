@@ -1,48 +1,48 @@
 # Cas d'usage — La Ferme se Rebelle
 
-> Dernière mise à jour : 2025-06-18
+> Dernière mise à jour : 2025-06-19
 
 ## UC-01 — Connexion à l'application
 
 | Champ | Valeur |
 |-------|--------|
-| Acteur | Patron, Employé |
-| Préconditions | Compte actif créé par un patron |
+| Acteur | Patron, Gérant, Employé |
+| Préconditions | Compte actif avec adhésion à au moins une ferme |
 | Déclencheur | L'utilisateur ouvre l'application |
-| Scénario principal | 1. L'utilisateur accède à `/connexion`. 2. Il saisit email et mot de passe. 3. Le système vérifie les identifiants. 4. L'utilisateur est redirigé vers le tableau de bord. |
+| Scénario principal | 1. L'utilisateur accède à `/connexion`. 2. Il saisit email et mot de passe. 3. Le système vérifie les identifiants. 4. L'utilisateur est redirigé vers le sélecteur de fermes ou le tableau de bord. |
 | Scénario alternatif | Identifiants incorrects → message d'erreur, pas de session |
-| Postconditions | Session JWT active avec rôle |
+| Postconditions | Session JWT active avec rôles par ferme |
 | Règles métier | Compte inactif = connexion refusée |
 
-## UC-02 — Créer un compte employé ou patron
+## UC-02 — Créer un compte membre (employé, gérant ou patron)
 
 | Champ | Valeur |
 |-------|--------|
-| Acteur | Patron |
-| Préconditions | Session patron active |
-| Déclencheur | Le patron accède à « Utilisateurs » |
-| Scénario principal | 1. Le patron remplit nom, email, mot de passe, rôle. 2. Le système valide et crée le compte. 3. Le nouveau compte apparaît dans la liste. |
-| Scénario alternatif | Email déjà utilisé → erreur 409 |
-| Postconditions | Nouvel utilisateur en base, `active = true` |
-| Règles métier | Seul un patron peut créer des comptes ; mot de passe ≥ 8 caractères |
+| Acteur | Patron, Gérant |
+| Préconditions | Session active avec droit de gestion des membres |
+| Déclencheur | L'acteur accède à « Utilisateurs » |
+| Scénario principal | 1. L'acteur remplit nom, email, mot de passe, rôle. 2. Le système valide et crée le compte ou rattache un utilisateur existant. 3. Le nouveau membre apparaît dans la liste. |
+| Scénario alternatif | Email déjà membre de la ferme → erreur 409 ; gérant tente de créer un patron → erreur 403 |
+| Postconditions | Nouvel utilisateur ou nouvelle adhésion en base, `active = true` |
+| Règles métier | Patron : tous les rôles ; Gérant : gérant et employé uniquement ; mot de passe ≥ 8 caractères |
 
 ## UC-03 — Désactiver un compte
 
 | Champ | Valeur |
 |-------|--------|
-| Acteur | Patron |
-| Préconditions | Session patron, compte cible existant |
-| Déclencheur | Clic « Désactiver » sur un utilisateur |
-| Scénario principal | 1. Le patron désactive un compte. 2. `active` passe à `false`. 3. L'utilisateur ne peut plus se connecter. |
-| Scénario alternatif | Tentative de désactiver son propre compte → refusé |
-| Postconditions | Compte inactif conservé en historique |
+| Acteur | Patron, Gérant |
+| Préconditions | Session active, membre cible existant |
+| Déclencheur | Clic « Retirer » sur un membre |
+| Scénario principal | 1. L'acteur désactive un membre. 2. `active` passe à `false` sur l'adhésion. 3. L'utilisateur ne peut plus accéder à cette ferme. |
+| Scénario alternatif | Tentative de retirer son propre accès → refusé ; gérant tente de retirer un patron → refusé |
+| Postconditions | Adhésion inactive conservée en historique |
 | Règles métier | Pas de suppression physique |
 
 ## UC-04 — Consulter la carte des pâtures
 
 | Champ | Valeur |
 |-------|--------|
-| Acteur | Patron, Employé |
+| Acteur | Patron, Gérant, Employé |
 | Préconditions | Session active, parcelles enregistrées |
 | Déclencheur | Accès à « Carte des pâtures » |
 | Scénario principal | 1. La carte Leaflet affiche les polygones. 2. Les parcelles affectées du jour sont mises en évidence. 3. L'utilisateur peut cliquer une parcelle pour la sélectionner. |
@@ -53,7 +53,7 @@
 
 | Champ | Valeur |
 |-------|--------|
-| Acteur | Patron, Employé |
+| Acteur | Patron, Gérant, Employé |
 | Préconditions | Parcelle sélectionnée, date du jour |
 | Déclencheur | Clic « Enregistrer la sortie » avec session Matin |
 | Scénario principal | 1. L'utilisateur choisit la date et « Traite du matin ». 2. Il sélectionne une parcelle. 3. Le système enregistre ou met à jour l'affectation unique (date + matin). 4. Confirmation affichée. |
@@ -65,7 +65,7 @@
 
 | Champ | Valeur |
 |-------|--------|
-| Acteur | Patron, Employé |
+| Acteur | Patron, Gérant, Employé |
 | Préconditions | Idem UC-05 |
 | Déclencheur | Session « Traite du soir » + enregistrement |
 | Scénario principal | Même flux que UC-05 avec `session = EVENING` |
@@ -76,20 +76,48 @@
 
 | Champ | Valeur |
 |-------|--------|
-| Acteur | Patron, Employé |
+| Acteur | Patron, Gérant, Employé |
 | Préconditions | Session active |
 | Déclencheur | Connexion ou navigation accueil |
-| Scénario principal | 1. Affichage du nombre de parcelles actives. 2. Nombre de sorties définies aujourd'hui. 3. Rôle de l'utilisateur. 4. Liens rapides vers carte et admin (patron). |
+| Scénario principal | 1. Affichage du nombre de parcelles actives. 2. Nombre de sorties définies aujourd'hui. 3. Rôle de l'utilisateur. 4. Liens rapides vers carte et admin (patron/gérant). |
 | Postconditions | Vue à jour des indicateurs du jour |
 
-## UC-08 — Gérer les parcelles
+| Postconditions | Vue à jour des indicateurs du jour |
+
+## UC-08 — Créer une ferme avec compte gérant
 
 | Champ | Valeur |
 |-------|--------|
-| Acteur | Patron |
-| Préconditions | Session patron active |
-| Déclencheur | Accès à « Parcelles » (`/admin/patures`) |
-| Scénario principal | 1. Le patron consulte la liste des parcelles. 2. Il crée ou modifie une parcelle via l'éditeur cartographique (leaflet-draw). 3. Le polygone GeoJSON est enregistré via l'API `/api/pastures`. |
-| Scénario alternatif | Polygone non tracé → message d'erreur ; employé tente d'accéder → redirection |
-| Postconditions | Parcelles à jour, visibles sur la carte |
+| Acteur | Administrateur système |
+| Préconditions | Session admin système active |
+| Déclencheur | Accès à `/admin/fermes` et soumission du formulaire |
+| Scénario principal | 1. L'admin saisit le nom de la ferme (slug optionnel). 2. Il saisit nom, email et mot de passe du gérant initial. 3. Le système crée la ferme et l'adhésion `MANAGER`. 4. La ferme apparaît avec 1 membre. |
+| Scénario alternatif | Slug déjà utilisé → erreur 409 ; email existant → rattachement sans recréer l'utilisateur |
+| Postconditions | Ferme active, gérant opérationnel |
+| Règles métier | Compte gérant obligatoire à la création |
+
+## UC-10 — Ajouter un membre à une ferme existante (admin système)
+
+| Champ | Valeur |
+|-------|--------|
+| Acteur | Administrateur système |
+| Préconditions | Ferme existante, session admin active |
+| Déclencheur | Clic « Membres » sur une ferme dans `/admin/fermes` |
+| Scénario principal | 1. L'admin ouvre le panneau membres. 2. Il saisit nom, email, mot de passe et rôle. 3. Le système crée ou rattache l'utilisateur. 4. Le membre apparaît dans la liste. |
+| Scénario alternatif | Email déjà membre de la ferme → erreur 409 |
+| Postconditions | Nouvelle adhésion active |
+| Règles métier | Tous les rôles attribuables par l'admin système |
+
+## UC-09 — Gérer les parcelles
+
+| Champ | Valeur |
+|-------|--------|
+| Acteur | Patron, Gérant |
+| Préconditions | Session avec droit `canManagePastures` |
+| Déclencheur | Accès à « Gérer les parcelles » (`/f/{slug}/admin/patures`) |
+| Scénario principal | 1. L'acteur consulte la liste des parcelles. 2. Il crée ou modifie une parcelle via l'éditeur cartographique (leaflet-draw). 3. Le polygone GeoJSON est enregistré via l'API `/api/f/{slug}/pastures`. |
+| Scénario alternatif | Polygone non tracé → message d'erreur ; employé tente d'accéder → redirection ou 403 |
+| Postconditions | Parcelles à jour pour la ferme |
 | Règles métier | Géométrie Polygon GeoJSON `[lng, lat]` ; ring fermé |
+
+Voir aussi : [Matrice de droits](../permissions/MATRICE_DROITS.md)
