@@ -57,9 +57,13 @@ test.describe("Carte des pâtures", () => {
     await page.getByTestId("login-submit").click();
   });
 
-  test("devrait afficher la carte et le panneau de sortie", async ({ page }) => {
+  test("devrait afficher la carte plein écran et le panneau de sortie", async ({
+    page,
+  }) => {
     await page.goto("/carte");
     await expect(page.getByTestId("pasture-map")).toBeVisible();
+    await expect(page.getByTestId("toggle-actions")).toBeVisible();
+    await page.getByTestId("toggle-actions").click();
     await expect(page.getByTestId("grazing-panel")).toBeVisible();
     await expect(page.getByTestId("session-morning")).toBeVisible();
     await expect(page.getByTestId("session-evening")).toBeVisible();

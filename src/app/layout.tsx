@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { AppNav } from "@/components/layout/app-nav";
+import { MainContent } from "@/components/layout/main-content";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -46,7 +47,7 @@ export default function RootLayout({
       <body className="min-h-full bg-emerald-50 text-emerald-950">
         <AuthProvider>
           <AppNav />
-          <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+          <MainContent>{children}</MainContent>
         </AuthProvider>
       </body>
     </html>

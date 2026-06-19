@@ -34,17 +34,9 @@ export default async function CartePage() {
   }));
 
   return (
-    <div className="space-y-4">
-      <header>
-        <h1 className="text-3xl font-bold">Carte des pâtures et champs</h1>
-        <p className="text-emerald-800/80">
-          Définissez où sortir les vaches après la traite du matin et du soir.
-        </p>
-      </header>
-      <GrazingPanel
-        pastures={serializedPastures}
-        initialAssignments={serializedAssignments}
-      />
-    </div>
+    <GrazingPanel
+      pastures={serializedPastures}
+      initialAssignments={serializedAssignments}
+    />
   );
 }
