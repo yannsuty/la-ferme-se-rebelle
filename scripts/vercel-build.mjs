@@ -5,18 +5,27 @@
 import { execSync } from "node:child_process";
 
 const PRODUCTION_AUTH_URL = "https://la-ferme-se-rebelle.vercel.app";
+const DEVELOP_AUTH_URL = "https://la-ferme-se-rebelle-dev.vercel.app";
 
 function run(command) {
   console.log(`\n> ${command}`);
   execSync(command, { stdio: "inherit" });
 }
 
+function normalizeAuthUrl() {
+  return process.env.AUTH_URL?.replace(/\/$/, "");
+}
+
 function isProductionDeploy() {
-  const authUrl = process.env.AUTH_URL?.replace(/\/$/, "");
+  const authUrl = normalizeAuthUrl();
   if (authUrl) {
     return authUrl === PRODUCTION_AUTH_URL;
   }
   return false;
+}
+
+function isDevelopDeploy() {
+  return normalizeAuthUrl() === DEVELOP_AUTH_URL;
 }
 
 function shouldRunSeed() {
@@ -26,7 +35,11 @@ function shouldRunSeed() {
 }
 
 function shouldPurgeBeforeSeed() {
-  return process.env.RUN_DB_PURGE === "true" && !!process.env.DIRECT_URL;
+  if (!process.env.DIRECT_URL) return false;
+  if (process.env.RUN_DB_PURGE === "false") return false;
+  if (process.env.RUN_DB_PURGE === "true") return true;
+  // Develop : reset complet automatique à chaque déploiement
+  return isDevelopDeploy();
 }
 
 console.log("=== Build La Ferme se Rebelle ===");
@@ -41,7 +54,10 @@ if (process.env.DIRECT_URL) {
 }
 
 if (shouldPurgeBeforeSeed()) {
-  console.log("→ Purge demandée (RUN_DB_PURGE=true)");
+  const reason = isDevelopDeploy()
+    ? "auto-reset develop"
+    : "RUN_DB_PURGE=true";
+  console.log(`→ Purge avant seed (${reason})`);
   run("tsx scripts/db-purge.ts");
 }
 

@@ -4,11 +4,13 @@ import {
   isDevelopApp,
   isProductionApp,
   isStagingApp,
+  shouldAutoResetOnDeploy,
   shouldShowDemoCredentials,
 } from "./env";
 
 const originalAuthUrl = process.env.AUTH_URL;
 const originalNodeEnv = process.env.NODE_ENV;
+const originalRunDbPurge = process.env.RUN_DB_PURGE;
 
 afterEach(() => {
   if (originalAuthUrl === undefined) {
@@ -17,6 +19,11 @@ afterEach(() => {
     process.env.AUTH_URL = originalAuthUrl;
   }
   process.env.NODE_ENV = originalNodeEnv;
+  if (originalRunDbPurge === undefined) {
+    delete process.env.RUN_DB_PURGE;
+  } else {
+    process.env.RUN_DB_PURGE = originalRunDbPurge;
+  }
 });
 
 describe("isProductionApp", () => {
@@ -87,5 +94,25 @@ describe("canResetDatabase", () => {
   it("devrait autoriser la purge hors production", () => {
     process.env.AUTH_URL = "https://la-ferme-se-rebelle-staging.vercel.app";
     expect(canResetDatabase()).toBe(true);
+  });
+});
+
+describe("shouldAutoResetOnDeploy", () => {
+  it("devrait activer le reset auto sur develop", () => {
+    process.env.AUTH_URL = "https://la-ferme-se-rebelle-dev.vercel.app";
+    delete process.env.RUN_DB_PURGE;
+    expect(shouldAutoResetOnDeploy()).toBe(true);
+  });
+
+  it("devrait désactiver le reset auto sur staging par défaut", () => {
+    process.env.AUTH_URL = "https://la-ferme-se-rebelle-staging.vercel.app";
+    delete process.env.RUN_DB_PURGE;
+    expect(shouldAutoResetOnDeploy()).toBe(false);
+  });
+
+  it("devrait respecter RUN_DB_PURGE=false", () => {
+    process.env.AUTH_URL = "https://la-ferme-se-rebelle-dev.vercel.app";
+    process.env.RUN_DB_PURGE = "false";
+    expect(shouldAutoResetOnDeploy()).toBe(false);
   });
 });

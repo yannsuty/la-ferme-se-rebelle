@@ -42,6 +42,13 @@ export function canResetDatabase(): boolean {
   return !isProductionApp();
 }
 
+/** Reset automatique (purge + seed) à chaque déploiement Vercel develop. */
+export function shouldAutoResetOnDeploy(): boolean {
+  if (process.env.RUN_DB_PURGE === "false") return false;
+  if (process.env.RUN_DB_PURGE === "true") return true;
+  return isDevelopApp();
+}
+
 export const ADMIN_EMAIL_NON_PROD = "admin@test.local";
 export const ADMIN_PASSWORD_NON_PROD = "admin12345678";
 
