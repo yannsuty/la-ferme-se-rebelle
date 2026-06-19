@@ -44,13 +44,30 @@ npm run test:report       # génère docs/tests/RECAP_TESTS.md
 
 > Guide complet : **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
 
+### Environnements
+
+| Environnement | Branche Git | URL |
+|---------------|-------------|-----|
+| **Production** | `main` | https://la-ferme-se-rebelle.vercel.app |
+| **Staging** | `staging` | https://la-ferme-se-rebelle-staging.vercel.app |
+| **Dev** | `develop` | https://la-ferme-se-rebelle-dev.vercel.app |
+
+Chaque environnement correspond à un **projet Vercel dédié**. La branche indiquée doit être configurée comme **Production Branch** dans les paramètres Git du projet.
+
+Flux Git recommandé : branches de feature → `develop` → `staging` → `main`.
+
 ### Diagnostic en 10 secondes
 
 ```bash
-# 1. Fichier statique (ne nécessite pas la BDD)
-curl https://la-ferme-se-rebelle.vercel.app/health.json
+# Remplacer BASE par l'URL de l'environnement testé
+curl https://BASE/health.json          # statique, sans BDD
+curl https://BASE/api/health           # teste aussi la BDD
+```
 
-# 2. API avec test BDD
+Exemple production :
+
+```bash
+curl https://la-ferme-se-rebelle.vercel.app/health.json
 curl https://la-ferme-se-rebelle.vercel.app/api/health
 ```
 
@@ -65,7 +82,7 @@ curl https://la-ferme-se-rebelle.vercel.app/api/health
 | `DATABASE_URL` | URL poolée Neon (`-pooler`) |
 | `DIRECT_URL` | URL directe Neon (migrations) |
 | `AUTH_SECRET` | Secret JWT (32+ octets aléatoires) |
-| `AUTH_URL` | URL publique de l'app (ex. `https://la-ferme-se-rebelle.vercel.app`) |
+| `AUTH_URL` | URL publique de l'environnement (voir tableau ci-dessus) |
 
 ### Script de setup au build
 
@@ -99,13 +116,13 @@ Page de connexion : `https://votre-app.vercel.app/connexion`
 
 Si `/api/health` ou toute autre URL renvoie `404 NOT_FOUND` avec `x-vercel-error: NOT_FOUND`, **l'application n'est pas déployée sur ce domaine** (problème Vercel, pas de code).
 
-**Vérifications dans Vercel :**
+**Vérifications dans Vercel (par projet) :**
 
 1. **Settings → General → Framework Preset** = `Next.js`
-2. **Settings → Git → Production Branch** = `main`
-3. **Deployments** → dernier build `main` **Ready** → **Promote to Production**
-4. **Settings → Domains** : `la-ferme-se-rebelle.vercel.app` doit apparaître
-5. **Settings → Deployment Protection** : désactiver la protection sur **Production** (sinon 401 sur les URLs de preview)
+2. **Settings → Git → Production Branch** = branche de l'environnement (`main`, `staging` ou `develop`)
+3. **Deployments** → dernier build de la branche **Ready** → **Promote to Production**
+4. **Settings → Domains** : le domaine de l'environnement doit apparaître (voir tableau)
+5. **Settings → Deployment Protection** : désactiver la protection sur **Production** (sinon 401)
 
 **Test après correction :**
 ```
