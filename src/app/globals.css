@@ -17,3 +17,25 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
+
+.parcel-label-icon {
+  background: transparent;
+  border: none;
+}
+
+.parcel-label-text {
+  display: block;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #064e3b;
+  text-align: center;
+  text-shadow:
+    0 0 4px #fff,
+    0 0 4px #fff,
+    0 1px 2px rgb(0 0 0 / 25%);
+  pointer-events: none;
+  user-select: none;
+}

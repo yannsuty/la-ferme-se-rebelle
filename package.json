@@ -11,6 +11,8 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:purge": "tsx scripts/db-purge.ts",
+    "db:reset": "node scripts/db-reset.mjs",
     "db:setup": "prisma migrate deploy && tsx prisma/seed.ts",
     "test": "vitest",
     "test:watch": "vitest",
