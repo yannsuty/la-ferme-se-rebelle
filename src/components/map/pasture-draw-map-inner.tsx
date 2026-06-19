@@ -5,10 +5,12 @@ import "leaflet-draw";
 import {
   MapContainer,
   Polygon,
-  TileLayer,
   useMap,
 } from "react-leaflet";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BasemapLayer } from "./basemap-layer";
+import { BasemapToggle } from "./basemap-toggle";
+import type { BasemapStyle } from "@/lib/map-tiles";
 import type { PastureInput } from "@/lib/validations";
 import {
   geoJsonToLeafletLatLngs,
@@ -208,6 +210,8 @@ export function PastureDrawMapInner({
         ? getPolygonCenter(backgroundPastures[0].geometry)
         : [47.0, 2.0];
 
+  const [basemapStyle, setBasemapStyle] = useState<BasemapStyle>("satellite");
+
   return (
     <div data-testid="pasture-draw-map" className={`overflow-hidden rounded-xl border border-emerald-200 ${className}`}>
       <MapContainer
@@ -216,10 +220,8 @@ export function PastureDrawMapInner({
         className="h-full w-full"
         scrollWheelZoom
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <BasemapLayer style={basemapStyle} />
+        <BasemapToggle style={basemapStyle} onStyleChange={setBasemapStyle} />
         <FitBounds pastures={backgroundPastures} geometry={geometry} />
         {backgroundPastures.map((pasture) => (
           <Polygon

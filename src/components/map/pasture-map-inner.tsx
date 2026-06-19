@@ -3,13 +3,15 @@
 import L from "leaflet";
 import {
   MapContainer,
-  TileLayer,
   Polygon,
   Marker,
   Tooltip,
   useMap,
 } from "react-leaflet";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { BasemapLayer } from "./basemap-layer";
+import { BasemapToggle } from "./basemap-toggle";
+import type { BasemapStyle } from "@/lib/map-tiles";
 import type { PastureData, GrazingData } from "./pasture-map";
 import {
   escapeHtml,
@@ -72,6 +74,7 @@ export function PastureMapInner({
       : [47.0, 2.0];
 
   const assignmentPastureIds = new Set(assignments.map((a) => a.pastureId));
+  const [basemapStyle, setBasemapStyle] = useState<BasemapStyle>("plan");
 
   return (
     <div data-testid="pasture-map" className={`overflow-hidden ${className}`}>
@@ -82,10 +85,8 @@ export function PastureMapInner({
         scrollWheelZoom
         preferCanvas={false}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <BasemapLayer style={basemapStyle} />
+        <BasemapToggle style={basemapStyle} onStyleChange={setBasemapStyle} />
         <FitBounds pastures={pastures} />
         {pastures.map((pasture) => {
           const positions = geoJsonToLeafletLatLngs(pasture.geometry);
