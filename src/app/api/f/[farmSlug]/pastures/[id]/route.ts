@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { requireFarmAuth } from "@/lib/farm-auth";
 import { prisma } from "@/lib/prisma";
 import { pastureSchema } from "@/lib/validations";
+import { FARM_ADMIN_ROLES } from "@/lib/permissions";
 
 type RouteParams = { params: Promise<{ farmSlug: string; id: string }> };
 
 export async function PATCH(request: Request, { params }: RouteParams) {
   const { farmSlug, id } = await params;
-  const authResult = await requireFarmAuth(farmSlug, ["OWNER"]);
+  const authResult = await requireFarmAuth(farmSlug, FARM_ADMIN_ROLES);
   if (authResult.error) return authResult.error;
 
   const body = await request.json();
@@ -38,7 +39,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
 export async function DELETE(_request: Request, { params }: RouteParams) {
   const { farmSlug, id } = await params;
-  const authResult = await requireFarmAuth(farmSlug, ["OWNER"]);
+  const authResult = await requireFarmAuth(farmSlug, FARM_ADMIN_ROLES);
   if (authResult.error) return authResult.error;
 
   const existing = await prisma.pasture.findFirst({

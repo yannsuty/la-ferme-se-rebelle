@@ -5,13 +5,15 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { PowerIcon } from "@/components/icons/nav-icons";
 import { farmPath, parseFarmSlug } from "@/lib/farm-path";
+import { canAccessFarmAdmin } from "@/lib/permissions";
+import type { Role } from "@/lib/roles";
 
 export function AppNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const farmSlug = parseFarmSlug(pathname);
   const currentFarm = session?.farms.find((farm) => farm.slug === farmSlug);
-  const isOwner = currentFarm?.role === "OWNER";
+  const canAdmin = currentFarm ? canAccessFarmAdmin(currentFarm.role as Role) : false;
 
   if (!session || pathname.startsWith("/admin")) return null;
 
@@ -22,12 +24,12 @@ export function AppNav() {
         {
           href: farmPath(farmSlug, "/admin/utilisateurs"),
           label: "Utilisateurs",
-          ownerOnly: true,
+          adminOnly: true,
         },
         {
           href: farmPath(farmSlug, "/admin/patures"),
           label: "Gérer les parcelles",
-          ownerOnly: true,
+          adminOnly: true,
         },
       ]
     : [];
@@ -41,7 +43,7 @@ export function AppNav() {
         {links.length > 0 && (
           <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 md:flex">
             {links
-              .filter((link) => !link.ownerOnly || isOwner)
+              .filter((link) => !link.adminOnly || canAdmin)
               .map((link) => {
                 const active = pathname === link.href;
                 return (

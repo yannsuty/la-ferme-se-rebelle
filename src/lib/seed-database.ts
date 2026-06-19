@@ -112,6 +112,7 @@ async function seedSystemAdmin() {
 
 async function seedDemoData() {
   const ownerPassword = await hashPassword("patron1234");
+  const managerPassword = await hashPassword("gerant1234");
   const employeePassword = await hashPassword("employe1234");
 
   const rebelle = await prisma.farm.upsert({
@@ -146,6 +147,20 @@ async function seedDemoData() {
     },
   });
 
+  const manager = await prisma.user.upsert({
+    where: { email: "gerant@ferme.local" },
+    update: {
+      name: "Paul Gérant",
+      passwordHash: managerPassword,
+      active: true,
+    },
+    create: {
+      email: "gerant@ferme.local",
+      name: "Paul Gérant",
+      passwordHash: managerPassword,
+    },
+  });
+
   const employee = await prisma.user.upsert({
     where: { email: "employe@ferme.local" },
     update: {
@@ -163,6 +178,7 @@ async function seedDemoData() {
   const memberships = [
     { userId: patron.id, farmId: rebelle.id, role: "OWNER" as const },
     { userId: patron.id, farmId: colline.id, role: "OWNER" as const },
+    { userId: manager.id, farmId: rebelle.id, role: "MANAGER" as const },
     { userId: employee.id, farmId: rebelle.id, role: "EMPLOYEE" as const },
     { userId: employee.id, farmId: colline.id, role: "EMPLOYEE" as const },
   ];

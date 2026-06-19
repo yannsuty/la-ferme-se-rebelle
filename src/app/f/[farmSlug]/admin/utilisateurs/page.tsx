@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { UsersManager } from "@/components/admin/users-manager";
 import { getFarmAccess } from "@/lib/farm-auth";
 import { auth } from "@/lib/auth";
+import { canManageUsers } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export default async function AdminUsersPage({ params }: PageProps) {
   if (!session?.user) notFound();
 
   const access = await getFarmAccess(farmSlug, session.user.id);
-  if (!access || access.membership.role !== "OWNER") notFound();
+  if (!access || !canManageUsers(access.membership.role)) notFound();
 
   const members = await prisma.farmMembership.findMany({
     where: { farmId: access.farm.id },
@@ -47,13 +48,17 @@ export default async function AdminUsersPage({ params }: PageProps) {
         <p className="text-sm uppercase tracking-wide text-emerald-700/80">
           {access.farm.name}
         </p>
-        <h1 className="text-3xl font-bold">Comptes employés et patrons</h1>
+        <h1 className="text-3xl font-bold">Comptes de l'équipe</h1>
         <p className="text-emerald-800/80">
           Gérez les accès à cette ferme. Un même email peut appartenir à
           plusieurs fermes.
         </p>
       </header>
-      <UsersManager farmSlug={farmSlug} initialUsers={users} />
+      <UsersManager
+        farmSlug={farmSlug}
+        initialUsers={users}
+        actorRole={access.membership.role}
+      />
     </div>
   );
 }

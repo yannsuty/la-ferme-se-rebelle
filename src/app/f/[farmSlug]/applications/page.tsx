@@ -10,6 +10,7 @@ import {
 import { auth } from "@/lib/auth";
 import { getFarmAccess } from "@/lib/farm-auth";
 import { farmPath } from "@/lib/farm-path";
+import { canAccessFarmAdmin } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ const APPS = [
     label: "Tableau de bord",
     description: "Vue d'ensemble de la ferme",
     icon: DashboardIcon,
-    ownerOnly: false,
+    adminOnly: false,
     testId: "app-tile-dashboard",
   },
   {
@@ -31,7 +32,7 @@ const APPS = [
     label: "Carte des pâtures",
     description: "Parcelles et sorties après traite",
     icon: MapIcon,
-    ownerOnly: false,
+    adminOnly: false,
     testId: "app-tile-carte",
   },
   {
@@ -39,7 +40,7 @@ const APPS = [
     label: "Liste de tâches",
     description: "Travaux à planifier et suivre",
     icon: TaskListIcon,
-    ownerOnly: false,
+    adminOnly: false,
     testId: "app-tile-taches",
   },
   {
@@ -47,7 +48,7 @@ const APPS = [
     label: "Utilisateurs",
     description: "Comptes et accès de l'équipe",
     icon: AppGridIcon,
-    ownerOnly: true,
+    adminOnly: true,
     testId: "app-tile-users",
   },
   {
@@ -55,7 +56,7 @@ const APPS = [
     label: "Gérer les parcelles",
     description: "Création et édition des pâtures",
     icon: MapIcon,
-    ownerOnly: true,
+    adminOnly: true,
     testId: "app-tile-patures",
   },
 ] as const;
@@ -68,8 +69,8 @@ export default async function ApplicationsPage({ params }: PageProps) {
   const access = await getFarmAccess(farmSlug, session.user.id);
   if (!access) notFound();
 
-  const isOwner = access.membership.role === "OWNER";
-  const visibleApps = APPS.filter((app) => !app.ownerOnly || isOwner);
+  const canAdmin = canAccessFarmAdmin(access.membership.role);
+  const visibleApps = APPS.filter((app) => !app.adminOnly || canAdmin);
   const hasMultipleFarms = session.farms.length > 1;
 
   return (

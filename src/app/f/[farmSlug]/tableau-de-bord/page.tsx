@@ -5,6 +5,8 @@ import { getFarmAccess } from "@/lib/farm-auth";
 import { auth } from "@/lib/auth";
 import { farmPath } from "@/lib/farm-path";
 import { notFound } from "next/navigation";
+import { roleLabel } from "@/lib/roles";
+import { canManageUsers } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +62,7 @@ export default async function DashboardPage({ params }: PageProps) {
         <article className="rounded-xl border border-emerald-200 bg-white p-4">
           <p className="text-sm text-emerald-700">Votre rôle</p>
           <p className="text-xl font-semibold" data-testid="farm-role">
-            {access.membership.role === "OWNER" ? "Patron" : "Employé"}
+            {roleLabel(access.membership.role)}
           </p>
         </article>
       </div>
@@ -72,7 +74,7 @@ export default async function DashboardPage({ params }: PageProps) {
         >
           Voir la carte des pâtures
         </Link>
-        {access.membership.role === "OWNER" && (
+        {canManageUsers(access.membership.role) && (
           <Link
             href={farmPath(farmSlug, "/admin/utilisateurs")}
             className="rounded-lg border border-emerald-300 px-4 py-2 hover:bg-emerald-100"

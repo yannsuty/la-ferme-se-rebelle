@@ -1,6 +1,6 @@
 # Base de données — La Ferme se Rebelle
 
-> Dernière mise à jour : 2025-06-18
+> Dernière mise à jour : 2025-06-19
 
 ## Diagramme entité-relation
 
@@ -71,7 +71,7 @@ erDiagram
 
 | Enum | Valeurs | Description |
 |------|---------|-------------|
-| `Role` | `OWNER`, `EMPLOYEE` | Rôle **par ferme** (via `farm_memberships`) |
+| `Role` | `OWNER`, `MANAGER`, `EMPLOYEE` | Rôle **par ferme** (via `farm_memberships`) |
 | `ParcelType` | `PASTURE`, `FIELD` | Pâture ou champ |
 | `MilkingSession` | `MORNING`, `EVENING` | Traite matin ou soir |
 
@@ -98,6 +98,7 @@ Compte global (email unique). Le rôle est porté par `farm_memberships`.
 | passwordHash | TEXT | NOT NULL | bcrypt |
 | name | TEXT | NOT NULL | Nom affiché |
 | active | BOOLEAN | DEFAULT true | Compte actif |
+| isSystemAdmin | BOOLEAN | DEFAULT false | Administrateur plateforme |
 | createdAt / updatedAt | TIMESTAMP | auto | Audit |
 
 ### `farm_memberships`
@@ -107,7 +108,7 @@ Compte global (email unique). Le rôle est porté par `farm_memberships`.
 | id | TEXT | PK | Identifiant |
 | userId | TEXT | FK → users | Utilisateur |
 | farmId | TEXT | FK → farms | Ferme |
-| role | Role | DEFAULT EMPLOYEE | Patron ou employé **dans cette ferme** |
+| role | Role | DEFAULT EMPLOYEE | Patron, gérant ou employé **dans cette ferme** |
 | active | BOOLEAN | DEFAULT true | Accès à la ferme |
 | createdAt / updatedAt | TIMESTAMP | auto | Audit |
 
@@ -161,7 +162,9 @@ Compte global (email unique). Le rôle est porté par `farm_memberships`.
 
 | Email | Mot de passe | Fermes |
 |-------|--------------|--------|
+| admin@test.local | admin12345678 | Aucune (admin système) |
 | patron@ferme.local | patron1234 | Les deux (OWNER) |
+| gerant@ferme.local | gerant1234 | Rebelle (MANAGER) |
 | employe@ferme.local | employe1234 | Les deux (EMPLOYEE) |
 
 ## Migrations
@@ -170,6 +173,8 @@ Compte global (email unique). Le rôle est porté par `farm_memberships`.
 |-----------|-------------|
 | `20250618000000_init` | Schéma initial |
 | `20250618120000_multi_farm` | Fermes, adhésions, scope par ferme |
+| `20250619120000_system_admin` | Flag `isSystemAdmin` sur `users` |
+| `20250619140000_manager_role` | Valeur `MANAGER` dans l'enum `Role` |
 
 ## Commandes
 

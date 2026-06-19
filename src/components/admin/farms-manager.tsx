@@ -18,7 +18,13 @@ type Props = {
 export function FarmsManager({ initialFarms }: Props) {
   const [farms, setFarms] = useState<FarmRow[]>(initialFarms);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", slug: "" });
+  const [form, setForm] = useState({
+    name: "",
+    slug: "",
+    managerName: "",
+    managerEmail: "",
+    managerPassword: "",
+  });
 
   async function loadFarms() {
     const response = await fetch("/api/admin/farms");
@@ -36,6 +42,11 @@ export function FarmsManager({ initialFarms }: Props) {
     const payload = {
       name: form.name,
       ...(form.slug ? { slug: form.slug } : {}),
+      manager: {
+        name: form.managerName,
+        email: form.managerEmail,
+        password: form.managerPassword,
+      },
     };
 
     const response = await fetch("/api/admin/farms", {
@@ -50,7 +61,13 @@ export function FarmsManager({ initialFarms }: Props) {
       return;
     }
 
-    setForm({ name: "", slug: "" });
+    setForm({
+      name: "",
+      slug: "",
+      managerName: "",
+      managerEmail: "",
+      managerPassword: "",
+    });
     await loadFarms();
   }
 
@@ -86,6 +103,36 @@ export function FarmsManager({ initialFarms }: Props) {
           onChange={(e) => setForm({ ...form, slug: e.target.value })}
           className="rounded-lg border border-emerald-200 px-3 py-2"
           data-testid="farm-slug-input"
+        />
+        <p className="md:col-span-2 text-sm font-medium text-emerald-800">
+          Compte gérant initial
+        </p>
+        <input
+          placeholder="Nom du gérant"
+          required
+          value={form.managerName}
+          onChange={(e) => setForm({ ...form, managerName: e.target.value })}
+          className="rounded-lg border border-emerald-200 px-3 py-2"
+          data-testid="farm-manager-name-input"
+        />
+        <input
+          type="email"
+          placeholder="Email du gérant"
+          required
+          value={form.managerEmail}
+          onChange={(e) => setForm({ ...form, managerEmail: e.target.value })}
+          className="rounded-lg border border-emerald-200 px-3 py-2"
+          data-testid="farm-manager-email-input"
+        />
+        <input
+          type="password"
+          placeholder="Mot de passe du gérant"
+          required
+          minLength={8}
+          value={form.managerPassword}
+          onChange={(e) => setForm({ ...form, managerPassword: e.target.value })}
+          className="md:col-span-2 rounded-lg border border-emerald-200 px-3 py-2"
+          data-testid="farm-manager-password-input"
         />
         <button
           type="submit"

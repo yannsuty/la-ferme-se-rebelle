@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getFarmAccess } from "@/lib/farm-auth";
 import { auth } from "@/lib/auth";
 import type { PastureInput } from "@/lib/validations";
+import { canManagePastures } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export default async function AdminPasturesPage({ params }: PageProps) {
   if (!session?.user) notFound();
 
   const access = await getFarmAccess(farmSlug, session.user.id);
-  if (!access || access.membership.role !== "OWNER") notFound();
+  if (!access || !canManagePastures(access.membership.role)) notFound();
 
   const pastures = await prisma.pasture.findMany({
     where: { farmId: access.farm.id, active: true },

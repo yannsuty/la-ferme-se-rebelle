@@ -3,12 +3,13 @@ import { requireFarmAuth } from "@/lib/farm-auth";
 import { prisma } from "@/lib/prisma";
 import { createUserSchema } from "@/lib/validations";
 import { hashPassword } from "@/lib/password";
+import { FARM_ADMIN_ROLES, canAssignRole } from "@/lib/permissions";
 
 type RouteParams = { params: Promise<{ farmSlug: string }> };
 
 export async function GET(_request: Request, { params }: RouteParams) {
   const { farmSlug } = await params;
-  const authResult = await requireFarmAuth(farmSlug, ["OWNER"]);
+  const authResult = await requireFarmAuth(farmSlug, FARM_ADMIN_ROLES);
   if (authResult.error) return authResult.error;
 
   const members = await prisma.farmMembership.findMany({
@@ -39,7 +40,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
 export async function POST(request: Request, { params }: RouteParams) {
   const { farmSlug } = await params;
-  const authResult = await requireFarmAuth(farmSlug, ["OWNER"]);
+  const authResult = await requireFarmAuth(farmSlug, FARM_ADMIN_ROLES);
   if (authResult.error) return authResult.error;
 
   const body = await request.json();
@@ -49,6 +50,15 @@ export async function POST(request: Request, { params }: RouteParams) {
     return NextResponse.json(
       { error: "Données invalides", details: parsed.error.flatten() },
       { status: 400 },
+    );
+  }
+
+  if (
+    !canAssignRole(authResult.access.membership.role, parsed.data.role)
+  ) {
+    return NextResponse.json(
+      { error: "Vous ne pouvez pas attribuer ce rôle" },
+      { status: 403 },
     );
   }
 

@@ -3,6 +3,7 @@ import { requireSystemAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { createFarmSchema } from "@/lib/validations";
 import { uniqueFarmSlug } from "@/lib/slug";
+import { hashPassword } from "@/lib/password";
 
 export async function GET() {
   const authResult = await requireSystemAdmin();
@@ -58,12 +59,66 @@ export async function POST(request: Request) {
     }
   }
 
-  const farm = await prisma.farm.create({
-    data: {
-      name: parsed.data.name,
-      slug,
-    },
+  const email = parsed.data.manager.email.toLowerCase();
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+
+  const passwordHash = existingUser
+    ? null
+    : await hashPassword(parsed.data.manager.password);
+
+  const farm = await prisma.$transaction(async (tx) => {
+    const createdFarm = await tx.farm.create({
+      data: {
+        name: parsed.data.name,
+        slug,
+      },
+    });
+
+    const user =
+      existingUser ??
+      (await tx.user.create({
+        data: {
+          email,
+          name: parsed.data.manager.name,
+          passwordHash: passwordHash!,
+        },
+      }));
+
+    const existingMembership = await tx.farmMembership.findUnique({
+      where: {
+        userId_farmId: {
+          userId: user.id,
+          farmId: createdFarm.id,
+        },
+      },
+    });
+
+    if (existingMembership) {
+      throw new Error("MEMBER_EXISTS");
+    }
+
+    await tx.farmMembership.create({
+      data: {
+        userId: user.id,
+        farmId: createdFarm.id,
+        role: "MANAGER",
+      },
+    });
+
+    return createdFarm;
+  }).catch((error: unknown) => {
+    if (error instanceof Error && error.message === "MEMBER_EXISTS") {
+      return null;
+    }
+    throw error;
   });
+
+  if (!farm) {
+    return NextResponse.json(
+      { error: "Cet utilisateur appartient déjà à cette ferme" },
+      { status: 409 },
+    );
+  }
 
   return NextResponse.json(
     {
@@ -71,7 +126,7 @@ export async function POST(request: Request) {
       name: farm.name,
       slug: farm.slug,
       active: farm.active,
-      memberCount: 0,
+      memberCount: 1,
       pastureCount: 0,
       createdAt: farm.createdAt.toISOString(),
     },

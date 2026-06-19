@@ -3,12 +3,13 @@ import { requireFarmAuth } from "@/lib/farm-auth";
 import { prisma } from "@/lib/prisma";
 import { updateUserSchema } from "@/lib/validations";
 import { hashPassword } from "@/lib/password";
+import { FARM_ADMIN_ROLES, canAssignRole, canModifyMember } from "@/lib/permissions";
 
 type RouteParams = { params: Promise<{ farmSlug: string; id: string }> };
 
 export async function PATCH(request: Request, { params }: RouteParams) {
   const { farmSlug, id } = await params;
-  const authResult = await requireFarmAuth(farmSlug, ["OWNER"]);
+  const authResult = await requireFarmAuth(farmSlug, FARM_ADMIN_ROLES);
   if (authResult.error) return authResult.error;
 
   const body = await request.json();
@@ -35,6 +36,23 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
   if (!membership) {
     return NextResponse.json({ error: "Membre introuvable" }, { status: 404 });
+  }
+
+  if (!canModifyMember(authResult.access.membership.role, membership.role)) {
+    return NextResponse.json(
+      { error: "Vous ne pouvez pas modifier ce membre" },
+      { status: 403 },
+    );
+  }
+
+  if (
+    parsed.data.role &&
+    !canAssignRole(authResult.access.membership.role, parsed.data.role)
+  ) {
+    return NextResponse.json(
+      { error: "Vous ne pouvez pas attribuer ce rôle" },
+      { status: 403 },
+    );
   }
 
   if (parsed.data.name) {
@@ -76,7 +94,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
 export async function DELETE(_request: Request, { params }: RouteParams) {
   const { farmSlug, id } = await params;
-  const authResult = await requireFarmAuth(farmSlug, ["OWNER"]);
+  const authResult = await requireFarmAuth(farmSlug, FARM_ADMIN_ROLES);
   if (authResult.error) return authResult.error;
 
   if (authResult.session!.user.id === id) {
@@ -95,6 +113,13 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
 
   if (!membership) {
     return NextResponse.json({ error: "Membre introuvable" }, { status: 404 });
+  }
+
+  if (!canModifyMember(authResult.access.membership.role, membership.role)) {
+    return NextResponse.json(
+      { error: "Vous ne pouvez pas retirer ce membre" },
+      { status: 403 },
+    );
   }
 
   await prisma.farmMembership.update({

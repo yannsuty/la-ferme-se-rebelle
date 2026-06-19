@@ -1,5 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import { farmPath, parseFarmSlug } from "@/lib/farm-path";
+import { canAccessFarmAdmin } from "@/lib/permissions";
 
 function readIsSystemAdmin(auth: { isSystemAdmin?: boolean; user?: { isSystemAdmin?: boolean } } | null): boolean {
   return auth?.user?.isSystemAdmin ?? auth?.isSystemAdmin ?? false;
@@ -53,7 +54,7 @@ export const authConfig = {
           return Response.redirect(new URL("/fermes", nextUrl));
         }
 
-        if (pathname.includes("/admin") && membership.role !== "OWNER") {
+        if (pathname.includes("/admin") && !canAccessFarmAdmin(membership.role)) {
           return Response.redirect(
             new URL(farmPath(farmSlug, "/tableau-de-bord"), nextUrl),
           );

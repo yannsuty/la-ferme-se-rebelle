@@ -36,6 +36,16 @@ describe("createUserSchema", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it("devrait valider la création d'un gérant", () => {
+    const result = createUserSchema.safeParse({
+      email: "gerant@ferme.local",
+      password: "motdepasse",
+      name: "Paul",
+      role: "MANAGER",
+    });
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("pastureSchema", () => {
@@ -73,9 +83,21 @@ describe("grazingAssignmentSchema", () => {
 });
 
 describe("createFarmSchema", () => {
-  it("devrait valider une ferme avec nom seul", () => {
-    const result = createFarmSchema.safeParse({ name: "Ma Ferme" });
+  it("devrait valider une ferme avec compte gérant", () => {
+    const result = createFarmSchema.safeParse({
+      name: "Ma Ferme",
+      manager: {
+        name: "Paul Gérant",
+        email: "gerant@ferme.local",
+        password: "motdepasse",
+      },
+    });
     expect(result.success).toBe(true);
+  });
+
+  it("devrait rejeter une ferme sans compte gérant", () => {
+    const result = createFarmSchema.safeParse({ name: "Ma Ferme" });
+    expect(result.success).toBe(false);
   });
 
   it("devrait rejeter un slug invalide", () => {

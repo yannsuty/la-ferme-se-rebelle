@@ -1,6 +1,6 @@
 # Architecture — La Ferme se Rebelle
 
-> Dernière mise à jour : 2025-06-18
+> Dernière mise à jour : 2025-06-19
 
 ## Vue d'ensemble
 
@@ -14,7 +14,7 @@ Application PWA de gestion d'une ferme laitière. Première version centrée sur
 | PWA | `@ducanh2912/next-pwa`, manifest, icônes |
 | Cartographie | Leaflet, react-leaflet, tuiles OpenStreetMap |
 | API | Next.js Route Handlers (`/api/*`) |
-| Auth | NextAuth.js v5, JWT, rôles OWNER / EMPLOYEE |
+| Auth | NextAuth.js v5, JWT, rôles OWNER / MANAGER / EMPLOYEE |
 | ORM | Prisma 7 |
 | Base de données | PostgreSQL (Neon) |
 | Hébergement | Vercel |
@@ -35,6 +35,7 @@ src/
 ├── components/
 ├── lib/
 │   ├── farm-auth.ts        # Vérification d'accès ferme
+│   ├── permissions.ts      # Matrice de droits (source de vérité code)
 │   └── farm-path.ts        # Helpers de chemins /f/{slug}
 prisma/
 docs/
@@ -104,13 +105,15 @@ flowchart TD
 
 - Mots de passe hashés (bcrypt, 12 rounds)
 - Middleware protège toutes les routes sauf `/connexion`
-- Routes `/f/{slug}/admin/*` réservées au rôle `OWNER` **dans la ferme**
+- Routes `/f/{slug}/admin/*` réservées aux rôles `OWNER` et `MANAGER` **dans la ferme**
 - API `/api/f/{slug}/*` : vérification d'adhésion en base (`farm_memberships`)
 - Validation Zod sur toutes les entrées API
+- Matrice de droits documentée : [`docs/permissions/MATRICE_DROITS.md`](../permissions/MATRICE_DROITS.md)
+- Implémentation centralisée : `src/lib/permissions.ts`
 
 ## Évolutions prévues
 
 - Éditeur de polygones sur carte (création parcelles)
-- Création de fermes et invitation d'utilisateurs existants
+- Invitation d'utilisateurs existants sans mot de passe
 - Mode hors-ligne avancé (sync IndexedDB)
 - Notifications push pour rappels de traite

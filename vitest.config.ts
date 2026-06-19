@@ -16,6 +16,7 @@ export default defineConfig({
         "src/lib/geo.ts",
         "src/lib/password.ts",
         "src/lib/roles.ts",
+        "src/lib/permissions.ts",
       ],
       exclude: ["src/generated/**", "src/lib/prisma.ts"],
       thresholds: {
