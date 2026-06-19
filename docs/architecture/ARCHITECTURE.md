@@ -12,7 +12,7 @@ Application PWA de gestion d'une ferme laitière. Première version centrée sur
 |--------|-------------|
 | Frontend | Next.js 16, React 19, Tailwind CSS 4 |
 | PWA | `@ducanh2912/next-pwa`, manifest, icônes |
-| Cartographie | Leaflet, react-leaflet, tuiles OpenStreetMap |
+| Cartographie | Leaflet, react-leaflet, leaflet-draw, tuiles OpenStreetMap |
 | API | Next.js Route Handlers (`/api/*`) |
 | Auth | NextAuth.js v5, JWT, rôles OWNER / EMPLOYEE |
 | ORM | Prisma 7 |
@@ -94,7 +94,6 @@ flowchart TD
 
 ## Évolutions prévues
 
-- Éditeur de polygones sur carte (création parcelles)
 - Multi-fermes / multi-espèces
 - Mode hors-ligne avancé (sync IndexedDB)
 - Notifications push pour rappels de traite

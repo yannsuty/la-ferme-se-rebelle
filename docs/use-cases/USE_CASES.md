@@ -81,3 +81,15 @@
 | Déclencheur | Connexion ou navigation accueil |
 | Scénario principal | 1. Affichage du nombre de parcelles actives. 2. Nombre de sorties définies aujourd'hui. 3. Rôle de l'utilisateur. 4. Liens rapides vers carte et admin (patron). |
 | Postconditions | Vue à jour des indicateurs du jour |
+
+## UC-08 — Gérer les parcelles
+
+| Champ | Valeur |
+|-------|--------|
+| Acteur | Patron |
+| Préconditions | Session patron active |
+| Déclencheur | Accès à « Parcelles » (`/admin/patures`) |
+| Scénario principal | 1. Le patron consulte la liste des parcelles. 2. Il crée ou modifie une parcelle via l'éditeur cartographique (leaflet-draw). 3. Le polygone GeoJSON est enregistré via l'API `/api/pastures`. |
+| Scénario alternatif | Polygone non tracé → message d'erreur ; employé tente d'accéder → redirection |
+| Postconditions | Parcelles à jour, visibles sur la carte |
+| Règles métier | Géométrie Polygon GeoJSON `[lng, lat]` ; ring fermé |

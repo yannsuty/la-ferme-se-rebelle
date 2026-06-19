@@ -4,6 +4,7 @@ import {
   formatSessionLabel,
   geoJsonToLeafletLatLngs,
   getPolygonCenter,
+  leafletLatLngsToGeoJson,
   todayIsoDate,
 } from "./geo";
 
@@ -24,6 +25,28 @@ describe("geo utilities", () => {
   it("devrait convertir GeoJSON en coordonnées Leaflet", () => {
     const latLngs = geoJsonToLeafletLatLngs(samplePolygon);
     expect(latLngs[0]).toEqual([47.0, 2.0]);
+  });
+
+  it("devrait convertir des coordonnées Leaflet en GeoJSON", () => {
+    const latLngs: [number, number][] = [
+      [47.0, 2.0],
+      [47.0, 2.2],
+      [47.2, 2.2],
+      [47.2, 2.0],
+    ];
+    const geometry = leafletLatLngsToGeoJson(latLngs);
+    expect(geometry.type).toBe("Polygon");
+    expect(geometry.coordinates[0][0]).toEqual([2.0, 47.0]);
+    expect(geometry.coordinates[0].at(-1)).toEqual([2.0, 47.0]);
+  });
+
+  it("devrait rejeter un polygone avec moins de 3 points", () => {
+    expect(() =>
+      leafletLatLngsToGeoJson([
+        [47.0, 2.0],
+        [47.1, 2.1],
+      ]),
+    ).toThrow("au moins 3 points");
   });
 
   it("devrait calculer le centre d'un polygone", () => {

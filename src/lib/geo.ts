@@ -20,6 +20,27 @@ export function geoJsonToLeafletLatLngs(
   return geometry.coordinates[0].map(([lng, lat]) => [lat, lng] as [number, number]);
 }
 
+/** Convertit des positions Leaflet [lat, lng] en polygone GeoJSON [lng, lat]. */
+export function leafletLatLngsToGeoJson(
+  positions: [number, number][],
+): GeoPolygon {
+  if (positions.length < 3) {
+    throw new Error("Un polygone doit contenir au moins 3 points");
+  }
+
+  const coordinates = positions.map(
+    ([lat, lng]) => [lng, lat] as [number, number],
+  );
+  const first = coordinates[0];
+  const last = coordinates[coordinates.length - 1];
+
+  if (first[0] !== last[0] || first[1] !== last[1]) {
+    coordinates.push([first[0], first[1]]);
+  }
+
+  return { type: "Polygon", coordinates: [coordinates] };
+}
+
 export function formatSessionLabel(session: "MORNING" | "EVENING"): string {
   return session === "MORNING" ? "Traite du matin" : "Traite du soir";
 }
