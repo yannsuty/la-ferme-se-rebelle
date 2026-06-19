@@ -17,6 +17,7 @@ export type FarmMembershipSummary = {
 declare module "next-auth" {
   interface User {
     farms: FarmMembershipSummary[];
+    isSystemAdmin: boolean;
   }
 
   interface Session {
@@ -24,8 +25,10 @@ declare module "next-auth" {
       id: string;
       email: string;
       name: string;
+      isSystemAdmin: boolean;
     };
     farms: FarmMembershipSummary[];
+    isSystemAdmin: boolean;
   }
 }
 
@@ -33,6 +36,7 @@ declare module "@auth/core/jwt" {
   interface JWT {
     id: string;
     farms: FarmMembershipSummary[];
+    isSystemAdmin: boolean;
   }
 }
 
@@ -66,13 +70,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           },
         });
 
-        if (!user || !user.active || user.memberships.length === 0) {
+        if (!user || !user.active) {
           if (!isProductionApp()) {
             console.warn("[auth] Connexion refusée", {
               email: parsed.data.email.toLowerCase(),
               userFound: Boolean(user),
               userActive: user?.active ?? false,
-              memberships: user?.memberships.length ?? 0,
             });
           }
           return null;
@@ -91,16 +94,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        const farms = user.memberships.map((membership) => ({
+          id: membership.farm.id,
+          slug: membership.farm.slug,
+          name: membership.farm.name,
+          role: membership.role,
+        }));
+
+        if (!user.isSystemAdmin && farms.length === 0) {
+          if (!isProductionApp()) {
+            console.warn("[auth] Aucune ferme accessible", {
+              email: parsed.data.email.toLowerCase(),
+            });
+          }
+          return null;
+        }
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
-          farms: user.memberships.map((membership) => ({
-            id: membership.farm.id,
-            slug: membership.farm.slug,
-            name: membership.farm.name,
-            role: membership.role,
-          })),
+          farms,
+          isSystemAdmin: user.isSystemAdmin,
         };
       },
     }),

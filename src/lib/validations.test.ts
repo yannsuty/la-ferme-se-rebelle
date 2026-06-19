@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   createUserSchema,
+  createFarmSchema,
+  databaseResetSchema,
   grazingAssignmentSchema,
   loginSchema,
   pastureSchema,
@@ -67,5 +69,29 @@ describe("grazingAssignmentSchema", () => {
       pastureId: "clxyz123",
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("createFarmSchema", () => {
+  it("devrait valider une ferme avec nom seul", () => {
+    const result = createFarmSchema.safeParse({ name: "Ma Ferme" });
+    expect(result.success).toBe(true);
+  });
+
+  it("devrait rejeter un slug invalide", () => {
+    const result = createFarmSchema.safeParse({
+      name: "Ma Ferme",
+      slug: "Slug Invalide",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("databaseResetSchema", () => {
+  it("devrait exiger la confirmation exacte", () => {
+    const ok = databaseResetSchema.safeParse({ confirmation: "REINITIALISER" });
+    const ko = databaseResetSchema.safeParse({ confirmation: "reset" });
+    expect(ok.success).toBe(true);
+    expect(ko.success).toBe(false);
   });
 });

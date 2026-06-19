@@ -37,7 +37,27 @@ export const grazingAssignmentSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const createFarmSchema = z.object({
+  name: z.string().min(2, "Nom requis").max(100),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug invalide")
+    .max(60)
+    .optional(),
+});
+
+export const updateFarmSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  active: z.boolean().optional(),
+});
+
+export const databaseResetSchema = z.object({
+  confirmation: z.literal("REINITIALISER"),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type PastureInput = z.infer<typeof pastureSchema>;
 export type GrazingAssignmentInput = z.infer<typeof grazingAssignmentSchema>;
+export type CreateFarmInput = z.infer<typeof createFarmSchema>;
+export type UpdateFarmInput = z.infer<typeof updateFarmSchema>;

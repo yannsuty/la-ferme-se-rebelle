@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { isProductionApp, shouldShowDemoCredentials } from "./env";
+import {
+  canResetDatabase,
+  isDevelopApp,
+  isProductionApp,
+  isStagingApp,
+  shouldShowDemoCredentials,
+} from "./env";
 
 const originalAuthUrl = process.env.AUTH_URL;
 const originalNodeEnv = process.env.NODE_ENV;
@@ -55,5 +61,31 @@ describe("shouldShowDemoCredentials", () => {
   it("devrait afficher les comptes hors production", () => {
     process.env.AUTH_URL = "https://la-ferme-se-rebelle-dev.vercel.app";
     expect(shouldShowDemoCredentials()).toBe(true);
+  });
+});
+
+describe("isStagingApp", () => {
+  it("devrait détecter staging", () => {
+    process.env.AUTH_URL = "https://la-ferme-se-rebelle-staging.vercel.app";
+    expect(isStagingApp()).toBe(true);
+  });
+});
+
+describe("isDevelopApp", () => {
+  it("devrait détecter develop", () => {
+    process.env.AUTH_URL = "https://la-ferme-se-rebelle-dev.vercel.app";
+    expect(isDevelopApp()).toBe(true);
+  });
+});
+
+describe("canResetDatabase", () => {
+  it("devrait interdire la purge en production", () => {
+    process.env.AUTH_URL = "https://la-ferme-se-rebelle.vercel.app";
+    expect(canResetDatabase()).toBe(false);
+  });
+
+  it("devrait autoriser la purge hors production", () => {
+    process.env.AUTH_URL = "https://la-ferme-se-rebelle-staging.vercel.app";
+    expect(canResetDatabase()).toBe(true);
   });
 });

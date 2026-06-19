@@ -13,7 +13,7 @@ export function AppNav() {
   const currentFarm = session?.farms.find((farm) => farm.slug === farmSlug);
   const isOwner = currentFarm?.role === "OWNER";
 
-  if (!session) return null;
+  if (!session || pathname.startsWith("/admin")) return null;
 
   const links = farmSlug
     ? [

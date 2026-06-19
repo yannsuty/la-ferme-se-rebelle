@@ -25,6 +25,17 @@ export default async function FarmsPage() {
           Choisissez la ferme à gérer. Vous pouvez appartenir à plusieurs
           exploitations avec des rôles différents.
         </p>
+        {session.isSystemAdmin && (
+          <p className="mt-2">
+            <a
+              href="/admin/fermes"
+              className="text-sm font-medium text-emerald-700 underline"
+              data-testid="admin-link"
+            >
+              Administration système →
+            </a>
+          </p>
+        )}
       </header>
 
       <ul className="space-y-3" data-testid="farm-list">
