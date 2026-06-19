@@ -28,6 +28,7 @@ type PastureMapProps = {
   selectedPastureId?: string | null;
   onSelectPasture?: (pastureId: string) => void;
   interactive?: boolean;
+  className?: string;
 };
 
 const PastureMapInner = dynamic(
@@ -35,7 +36,7 @@ const PastureMapInner = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[480px] items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
+      <div className="flex h-full items-center justify-center bg-emerald-50 text-emerald-800">
         Chargement de la carte...
       </div>
     ),

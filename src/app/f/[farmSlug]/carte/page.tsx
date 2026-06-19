@@ -51,21 +51,10 @@ export default async function CartePage({ params }: PageProps) {
   }));
 
   return (
-    <div className="space-y-4">
-      <header>
-        <p className="text-sm uppercase tracking-wide text-emerald-700/80">
-          {access.farm.name}
-        </p>
-        <h1 className="text-3xl font-bold">Carte des pâtures et champs</h1>
-        <p className="text-emerald-800/80">
-          Définissez où sortir les vaches après la traite du matin et du soir.
-        </p>
-      </header>
-      <GrazingPanel
-        farmSlug={farmSlug}
-        pastures={serializedPastures}
-        initialAssignments={serializedAssignments}
-      />
-    </div>
+    <GrazingPanel
+      farmSlug={farmSlug}
+      pastures={serializedPastures}
+      initialAssignments={serializedAssignments}
+    />
   );
 }

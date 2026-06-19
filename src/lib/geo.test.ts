@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  escapeHtml,
   formatParcelType,
   formatSessionLabel,
   geoJsonToLeafletLatLngs,
@@ -44,5 +45,11 @@ describe("geo utilities", () => {
 
   it("devrait retourner la date du jour au format ISO", () => {
     expect(todayIsoDate()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("devrait échapper les caractères HTML", () => {
+    expect(escapeHtml('<script>"&"</script>')).toBe(
+      "&lt;script&gt;&quot;&amp;&quot;&lt;/script&gt;",
+    );
   });
 });
