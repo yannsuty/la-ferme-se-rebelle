@@ -94,6 +94,18 @@
 | Postconditions | Ferme active, gérant opérationnel |
 | Règles métier | Compte gérant obligatoire à la création |
 
+## UC-10 — Ajouter un membre à une ferme existante (admin système)
+
+| Champ | Valeur |
+|-------|--------|
+| Acteur | Administrateur système |
+| Préconditions | Ferme existante, session admin active |
+| Déclencheur | Clic « Membres » sur une ferme dans `/admin/fermes` |
+| Scénario principal | 1. L'admin ouvre le panneau membres. 2. Il saisit nom, email, mot de passe et rôle. 3. Le système crée ou rattache l'utilisateur. 4. Le membre apparaît dans la liste. |
+| Scénario alternatif | Email déjà membre de la ferme → erreur 409 |
+| Postconditions | Nouvelle adhésion active |
+| Règles métier | Tous les rôles attribuables par l'admin système |
+
 ## UC-09 — Gérer les parcelles
 
 | Champ | Valeur |

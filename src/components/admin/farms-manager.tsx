@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, Fragment, useState } from "react";
+import { FarmMembersPanel } from "@/components/admin/farm-members-panel";
 
 type FarmRow = {
   id: string;
@@ -17,6 +18,7 @@ type Props = {
 
 export function FarmsManager({ initialFarms }: Props) {
   const [farms, setFarms] = useState<FarmRow[]>(initialFarms);
+  const [expandedFarmId, setExpandedFarmId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
@@ -164,22 +166,48 @@ export function FarmsManager({ initialFarms }: Props) {
               </tr>
             ) : (
               farms.map((farm) => (
-                <tr key={farm.id} className="border-t border-emerald-100">
-                  <td className="px-4 py-2 font-medium">{farm.name}</td>
-                  <td className="px-4 py-2 text-emerald-800/70">/{farm.slug}</td>
-                  <td className="px-4 py-2">{farm.memberCount}</td>
-                  <td className="px-4 py-2">{farm.pastureCount}</td>
-                  <td className="px-4 py-2">{farm.active ? "Active" : "Inactive"}</td>
-                  <td className="px-4 py-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleActive(farm)}
-                      className="text-emerald-700 underline"
-                    >
-                      {farm.active ? "Désactiver" : "Réactiver"}
-                    </button>
-                  </td>
-                </tr>
+                <Fragment key={farm.id}>
+                  <tr className="border-t border-emerald-100">
+                    <td className="px-4 py-2 font-medium">{farm.name}</td>
+                    <td className="px-4 py-2 text-emerald-800/70">/{farm.slug}</td>
+                    <td className="px-4 py-2">{farm.memberCount}</td>
+                    <td className="px-4 py-2">{farm.pastureCount}</td>
+                    <td className="px-4 py-2">{farm.active ? "Active" : "Inactive"}</td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedFarmId(
+                              expandedFarmId === farm.id ? null : farm.id,
+                            )
+                          }
+                          className="text-emerald-700 underline"
+                          data-testid={`manage-members-${farm.id}`}
+                        >
+                          {expandedFarmId === farm.id ? "Masquer" : "Membres"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleActive(farm)}
+                          className="text-emerald-700 underline"
+                        >
+                          {farm.active ? "Désactiver" : "Réactiver"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  {expandedFarmId === farm.id && (
+                    <tr>
+                      <td colSpan={6} className="p-0">
+                        <FarmMembersPanel
+                          farmId={farm.id}
+                          onMembersChanged={loadFarms}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))
             )}
           </tbody>

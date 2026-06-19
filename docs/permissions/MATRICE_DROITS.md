@@ -21,6 +21,7 @@ Un utilisateur peut avoir des rôles différents sur plusieurs fermes.
 |--------------------|:-------------:|:------:|:------:|:-------:|
 | Connexion sans adhésion ferme | ✓ | ✗ | ✗ | ✗ |
 | Créer une ferme + compte gérant initial | ✓ | ✗ | ✗ | ✗ |
+| Ajouter un membre à une ferme existante (admin) | ✓ | ✗ | ✗ | ✗ |
 | Activer / désactiver une ferme | ✓ | ✗ | ✗ | ✗ |
 | Réinitialiser la base (staging) | ✓ | ✗ | ✗ | ✗ |
 | Tableau de bord, carte, tâches, applications | ✓* | ✓ | ✓ | ✓ |
@@ -43,6 +44,10 @@ Lors de la création d'une ferme par l'administrateur système (`POST /api/admin
 - nom, email et mot de passe du futur gérant ;
 - rôle attribué automatiquement : `MANAGER` ;
 - si l'email existe déjà globalement, l'utilisateur existant est rattaché à la nouvelle ferme (le mot de passe fourni est ignoré).
+
+## Ajout de membre après création
+
+L'administrateur système peut ajouter des membres à une ferme existante depuis `/admin/fermes` (`GET/POST /api/admin/farms/{id}/members`). Tous les rôles sont attribuables. Le patron et le gérant peuvent également ajouter des membres depuis `/f/{slug}/admin/utilisateurs`.
 
 ## Implémentation
 

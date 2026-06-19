@@ -1,24 +1,40 @@
 import { NextResponse } from "next/server";
-import { requireFarmAuth } from "@/lib/farm-auth";
+import { requireSystemAdmin } from "@/lib/admin-auth";
 import { addFarmMember, listFarmMembers } from "@/lib/farm-members";
+import { prisma } from "@/lib/prisma";
 import { createUserSchema } from "@/lib/validations";
-import { FARM_ADMIN_ROLES, canAssignRole } from "@/lib/permissions";
 
-type RouteParams = { params: Promise<{ farmSlug: string }> };
+type RouteParams = { params: Promise<{ id: string }> };
+
+async function getFarmOr404(id: string) {
+  const farm = await prisma.farm.findUnique({ where: { id } });
+  if (!farm) return null;
+  return farm;
+}
 
 export async function GET(_request: Request, { params }: RouteParams) {
-  const { farmSlug } = await params;
-  const authResult = await requireFarmAuth(farmSlug, FARM_ADMIN_ROLES);
+  const authResult = await requireSystemAdmin();
   if (authResult.error) return authResult.error;
 
-  const members = await listFarmMembers(authResult.access.farm.id);
+  const { id } = await params;
+  const farm = await getFarmOr404(id);
+  if (!farm) {
+    return NextResponse.json({ error: "Ferme introuvable" }, { status: 404 });
+  }
+
+  const members = await listFarmMembers(farm.id);
   return NextResponse.json(members);
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
-  const { farmSlug } = await params;
-  const authResult = await requireFarmAuth(farmSlug, FARM_ADMIN_ROLES);
+  const authResult = await requireSystemAdmin();
   if (authResult.error) return authResult.error;
+
+  const { id } = await params;
+  const farm = await getFarmOr404(id);
+  if (!farm) {
+    return NextResponse.json({ error: "Ferme introuvable" }, { status: 404 });
+  }
 
   const body = await request.json();
   const parsed = createUserSchema.safeParse(body);
@@ -30,14 +46,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     );
   }
 
-  if (!canAssignRole(authResult.access.membership.role, parsed.data.role)) {
-    return NextResponse.json(
-      { error: "Vous ne pouvez pas attribuer ce rôle" },
-      { status: 403 },
-    );
-  }
-
-  const result = await addFarmMember(authResult.access.farm.id, parsed.data);
+  const result = await addFarmMember(farm.id, parsed.data);
 
   if (result === "already_member") {
     return NextResponse.json(
