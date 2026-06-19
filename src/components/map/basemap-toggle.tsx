@@ -3,6 +3,7 @@
 import L from "leaflet";
 import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
+import { BASEMAP_ICON_MARKUP } from "@/components/icons/map-icons";
 import { BASEMAP_LABELS, type BasemapStyle } from "@/lib/map-tiles";
 
 type Props = {
@@ -49,7 +50,8 @@ export function BasemapToggle({
         ) as HTMLButtonElement;
         button.type = "button";
         button.dataset.basemap = basemapStyle;
-        button.textContent = BASEMAP_LABELS[basemapStyle];
+        button.innerHTML = BASEMAP_ICON_MARKUP[basemapStyle];
+        button.setAttribute("aria-label", BASEMAP_LABELS[basemapStyle]);
         button.title =
           basemapStyle === "satellite"
             ? "Vue satellite"
